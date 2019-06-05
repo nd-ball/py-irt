@@ -106,7 +106,7 @@ class OneParamLog:
         pyro.clear_param_store()
         for j in range(num_epochs):
             loss = svi.step(models, items, responses)
-            if j % 10 == 0:
+            if j % 100 == 0:
                 print("[epoch %04d] loss: %.4f" % (j + 1, loss))
 
         print("[epoch %04d] loss: %.4f" % (j + 1, loss))

@@ -36,8 +36,8 @@ models = []
 items = []
 responses = []
 
-real_theta = np.random.normal(size=[5])
-real_diff = np.random.normal(size=[5])
+real_theta = np.random.normal(size=[50])
+real_diff = np.random.normal(size=[50])
 
 obs = []
 for i in range(len(real_theta)):
@@ -49,11 +49,16 @@ for i in range(len(real_theta)):
 
 print(real_theta)
 print(real_diff)
-print(obs)
-
+print(responses) 
 
 num_models = len(set(models))
 num_items = len(set(items))
+print(num_items, num_models)
+
+models = torch.tensor(models, dtype=torch.long, device=device) 
+items = torch.tensor(items, dtype=torch.long, device=device) 
+responses = torch.tensor(responses, dtype=torch.float, device=device)
+
 
 # 3. define model and guide accordingly
 if args.model == '1PL':
