@@ -18,11 +18,10 @@ from scipy.special import expit
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument('-i', '--infile', help='response pattern file')
 parser.add_argument('-e', '--num-epochs', default=1000, type=int)
 parser.add_argument('--gpu', action='store_true')
 parser.add_argument('--priors', help='[vague, hierarchical]', default='hierarchical')
-parser.add_argument('--model', help='[1PL,2PL]', default='1PL')
+parser.add_argument('--model', help='[1PL,2PL]', default='1PL')  # 2pl not implemented yet
 args = parser.parse_args()
 
 device = torch.device('cpu')
