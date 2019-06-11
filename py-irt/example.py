@@ -13,7 +13,7 @@ import pyro
 import torch
 import torch.nn as nn
 
-from models.irt import OneParamLog
+from models.one_param_logistic import OneParamLog
 from scipy.special import expit 
 
 
