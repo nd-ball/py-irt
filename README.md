@@ -10,7 +10,18 @@ The user can specify whether vague or hierarchical priors are used.
 Two- and three-parameter logistic models are in the pipeline and will be added when available.
 
 
-## Citation
+## Citations
+
+If you use this code, please cite the following paper:
+
+```
+@inproceedings{lalor2019sivl,
+  author    = {Lalor, John P and Wu, Hao and Yu, Hong},
+  title     = {Learning Latent Parameters without Human Response Patterns: Item Response Theory with Artificial Crowds },
+  year      = {2019},
+  booktitle = {Proceedings of the 2019 Conference on Empirical Methods in Natural Language Processing},
+}
+```
 
 Implementation is based on the following paper:
 
@@ -23,18 +34,6 @@ Implementation is based on the following paper:
   pages={1422},
   year={2016},
   publisher={Frontiers}
-}
-```
-
-If you use this code, please also cite the following extended abstract:
-
-```
-@inproceedings{lalor2019sivl,
-  author    = {Lalor, John P. and Wu, Hao and Yu, Hong},
-  title     = {{Learning Latent Parameters without Human Response Patterns: Item Response Theory with Artificial Crowds }},
-  year      = {2019},
-  maintitle={Proceedings of the 2019 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies},
-  booktitle = {Workshop on Shortcomings in Vision and Language (SiVL), Extended Abstracts},
 }
 ```
 
