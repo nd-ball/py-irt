@@ -15,9 +15,9 @@ Two- and three-parameter logistic models are in the pipeline and will be added w
 If you use this code, please cite the following paper:
 
 ```
-@inproceedings{lalor2019sivl,
+@inproceedings{lalor2019emnlp,
   author    = {Lalor, John P and Wu, Hao and Yu, Hong},
-  title     = {Learning Latent Parameters without Human Response Patterns: Item Response Theory with Artificial Crowds },
+  title     = {Learning Latent Parameters without Human Response Patterns: Item Response Theory with Artificial Crowds},
   year      = {2019},
   booktitle = {Proceedings of the 2019 Conference on Empirical Methods in Natural Language Processing},
 }
