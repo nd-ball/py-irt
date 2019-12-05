@@ -45,8 +45,8 @@ m_idx = 0
 i_idx = 0
 
 with open(args.response_patterns, 'r') as infile:
-    inreader = csv.reader(infile) 
-    for mID, iID, _, _, response in inreader:
+    inreader = csv.reader(infile, delimiter='\t') 
+    for mID, iID, response in inreader:
         if mID not in modelID2idx:
             modelID2idx[mID] = m_idx 
             idx2modelID[m_idx] = mID 
@@ -80,7 +80,10 @@ m.fit(models, items, responses, args.num_epochs)
 
 for name in pyro.get_param_store().get_all_param_names():
     print(name)
-    val = pyro.param(name).data.numpy()
+    if args.gpu:
+        val = pyro.param(name).data.cpu().numpy()
+    else:
+        val = pyro.param(name).data.numpy()
     print(val)
     if name == 'loc_diff':
         with open(args.response_patterns + '.diffs', 'w') as outfile:
