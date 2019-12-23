@@ -9,10 +9,22 @@ At present, the one parameter logistic (1PL) model, aka Rasch model, is implemen
 The user can specify whether vague or hierarchical priors are used.
 Two- and three-parameter logistic models are in the pipeline and will be added when available.
 
+## Installation
 
+py-irt is now available on PyPi!
+
+### Pre-reqs
+
+1. Install [PyTorch](https://pytorch.org/get-started/locally/). 
+2. Install [Pyro](https://pyro.ai/) 
+3. Install py-irt: 
+
+```shell
+pip install py-irt 
+```
 ## Citations
 
-If you use this code, please cite the following paper:
+If you use this code, please consider citing the following paper:
 
 ```
 @inproceedings{lalor2019emnlp,
@@ -36,4 +48,10 @@ Implementation is based on the following paper:
   publisher={Frontiers}
 }
 ```
+
+## Questions? 
+
+Let me know if you have any requests, bugs, etc.
+
+Email: john.lalor@nd.edu 
 

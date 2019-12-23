@@ -5,17 +5,24 @@ with open('README.md', 'r') as fh:
 
 setuptools.setup(
     name='py-irt',
-    version='0.0.1',
+    version='0.0.2',
     author='John P. Lalor',
     author_email='john.lalor@nd.edu',
     description='Bayesian IRT models in Python',
     long_description=long_description,
     long_description_content_type='text/markdown',
     url='http://github.com/jplalor/py-irt',
-    packages=setuptools.find_packages(),
+    #packages=setuptools.find_packages(),
+    packages=['py_irt', 'py_irt/models'],
+    install_requires=[
+        "numpy>=1.17",
+        "pandas>=0.25",
+        "scipy>=1.3"
+    ],
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
+    python_requires='>=3.6',
 )
