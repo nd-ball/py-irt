@@ -48,14 +48,14 @@ for i in range(len(real_theta)):
         items.append(j) 
         responses.append(y) 
 
-print(real_theta)
-print(real_diff)
-print(real_slope)
-print(responses) 
+#print(real_theta)
+#print(real_diff)
+#print(real_slope)
+#print(responses) 
 
 num_models = len(set(models))
 num_items = len(set(items))
-print(num_items, num_models)
+#print(num_items, num_models)
 
 models = torch.tensor(models, dtype=torch.long, device=device) 
 items = torch.tensor(items, dtype=torch.long, device=device) 
@@ -63,28 +63,30 @@ responses = torch.tensor(responses, dtype=torch.float, device=device)
 
 
 # 3. define model and guide accordingly
-if args.model == '1PL':
-    m = OneParamLog(args.priors, device, num_items, num_models)
-elif args.model == '2PL':
-    m = TwoParamLog(args.priors, device, num_items, num_models)
+#if args.model == '1PL':
+m1 = OneParamLog(args.priors, device, num_items, num_models)
+#elif args.model == '2PL':
+m2 = TwoParamLog(args.priors, device, num_items, num_models)
 
 
+
+for m in [m1, m2]:
 # 4. fit irt model with svi, trace-elbo loss
-m.fit(models, items, responses, args.num_epochs) 
-
+    m.fit(models, items, responses, args.num_epochs) 
 # 5. once model is fit, write outputs (diffs and thetas) to disk, 
 #       retaining original modelIDs and itemIDs so we can use them 
 
 
-for name in pyro.get_param_store().get_all_param_names():
-    print(name)
-    val = pyro.param(name).data.numpy()
-    print(val)
-    if name == 'loc_diff':
-        print('mse: {}'.format(np.mean((val - real_diff) ** 2)))
-    elif name == 'loc_ability':
-        print('mse: {}'.format(np.mean((val - real_theta) ** 2)))
-    elif name == 'loc_slope':
-        print('mse: {}'.format(np.mean((val - real_slope) ** 2)))
+    for name in pyro.get_param_store().get_all_param_names():
+        print(name)
+        val = pyro.param(name).data.numpy()
+        #print(val)
+        if name == 'loc_diff':
+            print('mse: {}'.format(np.mean((val - real_diff) ** 2)))
+        elif name == 'loc_ability':
+            print('mse: {}'.format(np.mean((val - real_theta) ** 2)))
+        elif name == 'loc_slope':
+            print('mse: {}'.format(np.mean((val - real_slope) ** 2)))
+            print(val)
 
 
