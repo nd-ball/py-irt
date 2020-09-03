@@ -14,6 +14,7 @@ import torch
 import torch.nn as nn
 
 from py_irt.models.one_param_logistic import OneParamLog
+from py_irt.models.two_param_logistic import TwoParamLog
 from scipy.special import expit 
 
 
@@ -37,17 +38,19 @@ responses = []
 
 real_theta = np.random.normal(size=[50])
 real_diff = np.random.normal(size=[50])
+real_slope = np.random.lognormal(0, 0.25, size=[50]) 
 
 obs = []
 for i in range(len(real_theta)):
     for j in range(len(real_diff)):
-        y = np.random.binomial(1, expit(real_theta[i] - real_diff[j]))
+        y = np.random.binomial(1, expit(-1*real_slope[j]*(real_theta[i] - real_diff[j])))
         models.append(i) 
         items.append(j) 
         responses.append(y) 
 
 print(real_theta)
 print(real_diff)
+print(real_slope)
 print(responses) 
 
 num_models = len(set(models))
@@ -62,6 +65,8 @@ responses = torch.tensor(responses, dtype=torch.float, device=device)
 # 3. define model and guide accordingly
 if args.model == '1PL':
     m = OneParamLog(args.priors, device, num_items, num_models)
+elif args.model == '2PL':
+    m = TwoParamLog(args.priors, device, num_items, num_models)
 
 
 # 4. fit irt model with svi, trace-elbo loss
@@ -79,5 +84,7 @@ for name in pyro.get_param_store().get_all_param_names():
         print('mse: {}'.format(np.mean((val - real_diff) ** 2)))
     elif name == 'loc_ability':
         print('mse: {}'.format(np.mean((val - real_theta) ** 2)))
+    elif name == 'loc_slope':
+        print('mse: {}'.format(np.mean((val - real_slope) ** 2)))
 
 
