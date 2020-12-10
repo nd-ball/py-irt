@@ -15,7 +15,7 @@ import pandas as pd
 
 from functools import partial
 
-class OneParamLog:
+class TwoParamLog:
     def __init__(self, priors, device, num_items, num_models, verbose=False):
         self.priors = priors
         self.device = device
@@ -28,10 +28,11 @@ class OneParamLog:
             ability = pyro.sample('theta', dist.Normal(torch.tensor(0., device=self.device), torch.tensor(1., device=self.device))) 
 
         with pyro.plate('bs', self.num_items, device=self.device):
-            diff = pyro.sample('b', dist.Normal(torch.tensor(0., device=self.device), torch.tensor(1.e3, device=self.device)))
+            diff = pyro.sample('b', dist.Normal(torch.tensor(0., device=self.device), torch.tensor(0.1, device=self.device)))
+            slope = pyro.sample('a', dist.Normal(torch.tensor(0., device=self.device), torch.tensor(0.1, device=self.device)))
 
         with pyro.plate('observe_data', obs.size(0), device=self.device):
-            pyro.sample("obs", dist.Bernoulli(logits=ability[models] - diff[items]), obs=obs)
+            pyro.sample("obs", dist.Bernoulli(logits=(slope[items]* (ability[models] - diff[items]))), obs=obs)
 
     def guide_vague(self, models, items, obs):        
         # register learnable params in the param store
@@ -39,7 +40,11 @@ class OneParamLog:
         s_theta_param = pyro.param("scale_ability", torch.ones(self.num_models, device=self.device),
                             constraint=constraints.positive)
         m_b_param = pyro.param("loc_diff", torch.zeros(self.num_items, device=self.device))
-        s_b_param = pyro.param("scale_diff", torch.empty(self.num_items, device=self.device).fill_(1.e3),
+        s_b_param = pyro.param("scale_diff", torch.empty(self.num_items, device=self.device).fill_(1.e1),
+                                constraint=constraints.positive)
+        m_a_param = pyro.param("loc_slope", torch.ones(self.num_items, device=self.device),
+                                constraint=constraints.positive)
+        s_a_param = pyro.param("scale_slope", torch.empty(self.num_items, device=self.device).fill_(1.e-6),
                                 constraint=constraints.positive)
 
         # guide distributions
@@ -50,25 +55,35 @@ class OneParamLog:
             dist_b = dist.Normal(m_b_param, s_b_param)
             pyro.sample('b', dist_b)
 
+            dist_a = dist.Normal(m_a_param, s_a_param)
+            pyro.sample('a', dist_a)
+
+
 
     def model_hierarchical(self, models, items, obs):
         mu_b = pyro.sample('mu_b', dist.Normal(torch.tensor(0., device=self.device), torch.tensor(1.e6, device=self.device)))
         u_b = pyro.sample('u_b', dist.Gamma(torch.tensor(1., device=self.device), torch.tensor(1., device=self.device)))
         mu_theta = pyro.sample('mu_theta', dist.Normal(torch.tensor(0., device=self.device), torch.tensor(1.e6, device=self.device)))
         u_theta = pyro.sample('u_theta', dist.Gamma(torch.tensor(1., device=self.device), torch.tensor(1., device=self.device)))
+        mu_a = pyro.sample('mu_a', dist.Normal(torch.tensor(0., device=self.device), torch.tensor(1.e6, device=self.device)))
+        u_a = pyro.sample('u_a', dist.Gamma(torch.tensor(1., device=self.device), torch.tensor(1., device=self.device)))
         with pyro.plate('thetas', self.num_models, device=self.device):
             ability = pyro.sample('theta', dist.Normal(mu_theta, 1. / u_theta))
         with pyro.plate('bs', self.num_items, device=self.device):
             diff = pyro.sample('b', dist.Normal(mu_b, 1. / u_b))
+            slope = pyro.sample('a', dist.Normal(mu_a, 1. / u_a))
         with pyro.plate('observe_data', obs.size(0)):
-            pyro.sample("obs", dist.Bernoulli(logits=ability[models] - diff[items]), obs=obs)
+            pyro.sample("obs", dist.Bernoulli(logits=slope[items] * (ability[models] - diff[items])), obs=obs)
 
     def guide_hierarchical(self, models, items, obs):
         loc_mu_b_param = pyro.param('loc_mu_b', torch.tensor(0., device=self.device))
-        scale_mu_b_param = pyro.param('scale_mu_b', torch.tensor(1.e2, device=self.device), 
+        scale_mu_b_param = pyro.param('scale_mu_b', torch.tensor(1.e1, device=self.device), 
                                 constraint=constraints.positive)
         loc_mu_theta_param = pyro.param('loc_mu_theta', torch.tensor(0., device=self.device))
-        scale_mu_theta_param = pyro.param('scale_mu_theta', torch.tensor(1.e2, device=self.device),
+        scale_mu_theta_param = pyro.param('scale_mu_theta', torch.tensor(1.e1, device=self.device),
+                            constraint=constraints.positive)
+        loc_mu_a_param = pyro.param('loc_mu_a', torch.tensor(0., device=self.device))
+        scale_mu_a_param = pyro.param('scale_mu_a', torch.tensor(1.e1, device=self.device),
                             constraint=constraints.positive)
         alpha_b_param = pyro.param('alpha_b', torch.tensor(1., device=self.device),
                         constraint=constraints.positive)
@@ -78,11 +93,18 @@ class OneParamLog:
                         constraint=constraints.positive)
         beta_theta_param = pyro.param('beta_theta', torch.tensor(1., device=self.device),
                         constraint=constraints.positive)
+        alpha_a_param = pyro.param('alpha_a', torch.tensor(1., device=self.device),
+                        constraint=constraints.positive)
+        beta_a_param = pyro.param('beta_a', torch.tensor(1., device=self.device),
+                        constraint=constraints.positive)
         m_theta_param = pyro.param('loc_ability', torch.zeros(self.num_models, device=self.device))
         s_theta_param = pyro.param('scale_ability', torch.ones(self.num_models, device=self.device),
                             constraint=constraints.positive)
         m_b_param = pyro.param('loc_diff', torch.zeros(self.num_items, device=self.device))
         s_b_param = pyro.param('scale_diff', torch.ones(self.num_items, device=self.device),
+                                constraint=constraints.positive)
+        m_a_param = pyro.param('loc_slope', torch.zeros(self.num_items, device=self.device))
+        s_a_param = pyro.param('scale_slope', torch.ones(self.num_items, device=self.device),
                                 constraint=constraints.positive)
 
 
@@ -91,11 +113,15 @@ class OneParamLog:
         pyro.sample('u_b', dist.Gamma(alpha_b_param, beta_b_param))
         pyro.sample('mu_theta', dist.Normal(loc_mu_theta_param, scale_mu_theta_param))
         pyro.sample('u_theta', dist.Gamma(alpha_theta_param, beta_theta_param))
+        pyro.sample('mu_a', dist.Normal(loc_mu_a_param, scale_mu_a_param))
+        pyro.sample('u_a', dist.Gamma(alpha_a_param, beta_a_param))
         
+
         with pyro.plate('thetas', self.num_models, device=self.device):
             pyro.sample('theta', dist.Normal(m_theta_param, s_theta_param))
         with pyro.plate('bs', self.num_items, device=self.device):
             pyro.sample('b', dist.Normal(m_b_param, s_b_param))
+            pyro.sample('a', dist.Normal(m_a_param, s_a_param))
 
     def fit(self, models, items, responses, num_epochs):
         optim = Adam({'lr': 0.1})

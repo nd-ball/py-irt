@@ -48,6 +48,9 @@ Implementation is based on the following paper:
   publisher={Frontiers}
 }
 ```
+## Contributing
+
+This is research code. Pull requests and issues are welcome!
 
 ## Questions? 
 
