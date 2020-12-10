@@ -16,11 +16,12 @@ import pandas as pd
 from functools import partial
 
 class OneParamLog:
-    def __init__(self, priors, device, num_items, num_models):
+    def __init__(self, priors, device, num_items, num_models, verbose=False):
         self.priors = priors
         self.device = device
         self.num_items = num_items
         self.num_models = num_models
+        self.verbose = verbose 
 
     def model_vague(self, models, items, obs):
         with pyro.plate('thetas', self.num_models, device=self.device):
@@ -38,7 +39,7 @@ class OneParamLog:
         s_theta_param = pyro.param("scale_ability", torch.ones(self.num_models, device=self.device),
                             constraint=constraints.positive)
         m_b_param = pyro.param("loc_diff", torch.zeros(self.num_items, device=self.device))
-        s_b_param = pyro.param("scale_diff", torch.empty(self.num_items, device=self.device).fill_(1.e2),
+        s_b_param = pyro.param("scale_diff", torch.empty(self.num_items, device=self.device).fill_(1.e3),
                                 constraint=constraints.positive)
 
         # guide distributions
@@ -86,11 +87,11 @@ class OneParamLog:
 
 
         # sample statements
-        mu_b = pyro.sample('mu_b', dist.Normal(loc_mu_b_param, scale_mu_b_param))
-        u_b = pyro.sample('u_b', dist.Gamma(alpha_b_param, beta_b_param))
-        mu_theta = pyro.sample('mu_theta', dist.Normal(loc_mu_theta_param, scale_mu_theta_param))
-        u_theta = pyro.sample('u_theta', dist.Gamma(alpha_theta_param, beta_theta_param))
-
+        pyro.sample('mu_b', dist.Normal(loc_mu_b_param, scale_mu_b_param))
+        pyro.sample('u_b', dist.Gamma(alpha_b_param, beta_b_param))
+        pyro.sample('mu_theta', dist.Normal(loc_mu_theta_param, scale_mu_theta_param))
+        pyro.sample('u_theta', dist.Gamma(alpha_theta_param, beta_theta_param))
+        
         with pyro.plate('thetas', self.num_models, device=self.device):
             pyro.sample('theta', dist.Normal(m_theta_param, s_theta_param))
         with pyro.plate('bs', self.num_items, device=self.device):
@@ -106,7 +107,7 @@ class OneParamLog:
         pyro.clear_param_store()
         for j in range(num_epochs):
             loss = svi.step(models, items, responses)
-            if j % 100 == 0:
+            if j % 100 == 0 and self.verbose:
                 print("[epoch %04d] loss: %.4f" % (j + 1, loss))
 
         print("[epoch %04d] loss: %.4f" % (j + 1, loss))
