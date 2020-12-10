@@ -90,8 +90,7 @@ m2h = TwoParamLog("hierarchical", device, num_items, num_models, args.verbose)
 
 pyro.enable_validation(True)   
 
-#for m in [m1v, m2v, m1h, m2h]:
-for m in [m2v, m2h]:
+for m in [m1v, m2v, m1h, m2h]:
     # 4. fit irt model with svi, trace-elbo loss
     m.fit(models, items, responses, args.num_epochs) 
     # 5. once model is fit, write outputs (diffs and thetas) to disk, 
