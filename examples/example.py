@@ -35,8 +35,8 @@ models = []
 items = []
 responses = []
 
-num_subjects = 200
-num_items = 50
+num_subjects = 2000
+num_items = 100
 
 real_theta = np.random.normal(size=[num_subjects])
 real_diff = np.random.normal(size=[num_items])
@@ -88,7 +88,6 @@ m1h = OneParamLog("hierarchical", device, num_items, num_models, args.verbose)
 m2v = TwoParamLog("vague", device, num_items, num_models, args.verbose)
 m2h = TwoParamLog("hierarchical", device, num_items, num_models, args.verbose)
 
-pyro.enable_validation(True)   
 
 for m in [m1v, m2v, m1h, m2h]:
     # 4. fit irt model with svi, trace-elbo loss
