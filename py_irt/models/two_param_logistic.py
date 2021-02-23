@@ -16,6 +16,7 @@ import pandas as pd
 from functools import partial
 
 class TwoParamLog:
+    """2PL IRT model"""
     def __init__(self, priors, device, num_items, num_models, verbose=False):
         self.priors = priors
         self.device = device
