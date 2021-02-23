@@ -23,7 +23,9 @@ class TwoParamLog:
         self.num_models = num_models
         self.verbose = verbose 
 
+        
     def model_vague(self, models, items, obs):
+        """Initialize a 2PL model with vague priors"""
         with pyro.plate('thetas', self.num_models, device=self.device):
             ability = pyro.sample('theta', dist.Normal(torch.tensor(0., device=self.device), torch.tensor(1., device=self.device))) 
 
@@ -34,7 +36,9 @@ class TwoParamLog:
         with pyro.plate('observe_data', obs.size(0), device=self.device):
             pyro.sample("obs", dist.Bernoulli(logits=(slope[items]* (ability[models] - diff[items]))), obs=obs)
 
-    def guide_vague(self, models, items, obs):        
+            
+    def guide_vague(self, models, items, obs):
+        """Initialize a 2PL guide with vague priors"""
         # register learnable params in the param store
         m_theta_param = pyro.param("loc_ability", torch.zeros(self.num_models, device=self.device))
         s_theta_param = pyro.param("scale_ability", torch.ones(self.num_models, device=self.device),
@@ -59,8 +63,8 @@ class TwoParamLog:
             pyro.sample('a', dist_a)
 
 
-
     def model_hierarchical(self, models, items, obs):
+        """Initialize a 2PL model with hierarchical priors"""
         mu_b = pyro.sample('mu_b', dist.Normal(torch.tensor(0., device=self.device), torch.tensor(1.e6, device=self.device)))
         u_b = pyro.sample('u_b', dist.Gamma(torch.tensor(1., device=self.device), torch.tensor(1., device=self.device)))
         mu_theta = pyro.sample('mu_theta', dist.Normal(torch.tensor(0., device=self.device), torch.tensor(1.e6, device=self.device)))
@@ -75,7 +79,9 @@ class TwoParamLog:
         with pyro.plate('observe_data', obs.size(0)):
             pyro.sample("obs", dist.Bernoulli(logits=slope[items] * (ability[models] - diff[items])), obs=obs)
 
+            
     def guide_hierarchical(self, models, items, obs):
+        """Initialize a 2PL guide with hierarchical priors"""
         loc_mu_b_param = pyro.param('loc_mu_b', torch.tensor(0., device=self.device))
         scale_mu_b_param = pyro.param('scale_mu_b', torch.tensor(1.e1, device=self.device), 
                                 constraint=constraints.positive)
@@ -107,7 +113,6 @@ class TwoParamLog:
         s_a_param = pyro.param('scale_slope', torch.ones(self.num_items, device=self.device),
                                 constraint=constraints.positive)
 
-
         # sample statements
         pyro.sample('mu_b', dist.Normal(loc_mu_b_param, scale_mu_b_param))
         pyro.sample('u_b', dist.Gamma(alpha_b_param, beta_b_param))
@@ -123,7 +128,9 @@ class TwoParamLog:
             pyro.sample('b', dist.Normal(m_b_param, s_b_param))
             pyro.sample('a', dist.Normal(m_a_param, s_a_param))
 
+            
     def fit(self, models, items, responses, num_epochs):
+        """Fit the IRT model with variational inference"""
         optim = Adam({'lr': 0.1})
         if self.priors == 'vague':
             svi = SVI(self.model_vague, self.guide_vague, optim, loss=Trace_ELBO())
@@ -139,7 +146,9 @@ class TwoParamLog:
         print("[epoch %04d] loss: %.4f" % (j + 1, loss))
         values = ['loc_diff', 'scale_diff', 'loc_ability', 'scale_ability']
 
+        
     def fit_MCMC(self, models, items, responses, num_epochs):
+        """Fit the IRT model with MCMC"""
         sites = ['theta', 'b']
         nuts_kernel = NUTS(self.model_vague, adapt_step_size=True)
         hmc_posterior = MCMC(nuts_kernel, num_samples=1000, warmup_steps=100) \
@@ -151,6 +160,7 @@ class TwoParamLog:
 
 
     def summary(self, traces, sites):
+        """Aggregate marginals for MCM"""
         marginal = EmpiricalMarginal(traces, sites)._get_samples_and_weights()[0].detach().cpu().numpy()
         print(marginal)
         site_stats = {}
@@ -161,6 +171,3 @@ class TwoParamLog:
             site_stats[site_name] = marginal_site.apply(describe, axis=1) \
                 [["mean", "std", "5%", "25%", "50%", "75%", "95%"]]
         return site_stats
-
-
-
