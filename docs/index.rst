@@ -13,13 +13,13 @@ Welcome to py-irt's documentation!
 
 OneParameterLogistic
 =================================
-.. automodule:: py_irt.models.one_param_logistic
+.. autoclass:: py_irt.models.one_param_logistic.OneParamLog
    :members: 
 
       
 TwoParameterLogistic
 ================================
-.. automodule:: py_irt.models.two_param_logistic
+.. autoclass:: py_irt.models.two_param_logistic.TwoParamLog
    :members: 
 
       
