@@ -10,6 +10,8 @@ Welcome to py-irt's documentation!
    :maxdepth: 3
    :caption: Contents:
 
+   readme
+   
 
 OneParameterLogistic
 =================================
