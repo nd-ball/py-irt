@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.com/nd-ball/py-irt.svg?branch=master)](https://travis-ci.com/nd-ball/py-irt)
+
 # py-irt
 Bayesian IRT models in Python
 
