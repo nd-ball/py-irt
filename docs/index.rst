@@ -7,7 +7,7 @@ Welcome to py-irt's documentation!
 ==================================
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
    :caption: Contents:
 
 
