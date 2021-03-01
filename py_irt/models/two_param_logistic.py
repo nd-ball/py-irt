@@ -18,6 +18,8 @@ from functools import partial
 class TwoParamLog:
     """2PL IRT model"""
     def __init__(self, priors, device, num_items, num_models, verbose=False):
+        if priors not in ['vague', 'hierarchical']:
+            raise ValueError("Options for priors are vague and hierarchical")
         self.priors = priors
         self.device = device
         self.num_items = num_items
