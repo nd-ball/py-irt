@@ -18,7 +18,10 @@ setuptools.setup(
         "numpy>=1.17",
         "pandas>=0.25",
         "scipy>=1.3",
-        "pyro-ppl>=1.5.1"
+        "pyro-ppl>=1.5.1",
+        "codecov",
+        "pytest",
+        "pytest-cov"
     ],
     classifiers=[
         "Programming Language :: Python :: 3",
