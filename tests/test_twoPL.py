@@ -38,4 +38,17 @@ class TestTwoPL(unittest.TestCase):
         with self.assertRaises(ValueError):
             m = TwoParamLog("testing", "cpu", 100, 100, False)
 
+    def test_device(self):
+        with self.assertRaises(ValueError):
+            m = TwoParamLog("vague", "zpu", 100, 100, False)
+
+    def test_num_items(self):
+        with self.assertRaises(ValueError):
+            m = TwoParamLog("vague", "cpu", -100, 100, False)
+
+    def test_num_subjects(self):
+        with self.assertRaises(ValueError):
+            m = TwoParamLog("vague", "cpu", 100, -100, False)
+
+
 

@@ -20,6 +20,12 @@ class TwoParamLog:
     def __init__(self, priors, device, num_items, num_models, verbose=False):
         if priors not in ['vague', 'hierarchical']:
             raise ValueError("Options for priors are vague and hierarchical")
+        if device not in ['cpu', 'gpu']:
+            raise ValueError("Options for device are cpu and gpu")
+        if num_items <= 0:
+            raise ValueError("Number of items must be greater than 0")
+        if num_models <= 0:
+            raise ValueError("Number of subjects must be greater than 0")
         self.priors = priors
         self.device = device
         self.num_items = num_items

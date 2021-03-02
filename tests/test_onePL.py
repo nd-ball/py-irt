@@ -39,5 +39,17 @@ class TestOnePL(unittest.TestCase):
         with self.assertRaises(ValueError):
             m = OneParamLog("testing", "cpu", 100, 100, False)
 
-            
+    def test_device(self):
+        with self.assertRaises(ValueError):
+            m = OneParamLog("vague", "zpu", 100, 100, False)
+
+    def test_num_items(self):
+        with self.assertRaises(ValueError):
+            m = OneParamLog("vague", "cpu", -100, 100, False)
+
+    def test_num_subjects(self):
+        with self.assertRaises(ValueError):
+            m = OneParamLog("vague", "cpu", 100, -100, False)
+
+
 
