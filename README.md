@@ -8,13 +8,13 @@ Bayesian IRT models in Python
 
 This repository includes code for fitting Item Response Theory (IRT) models using variational inference. 
 
-At present, the one parameter logistic (1PL) model, aka Rasch model, is implemented. 
+At present, the one parameter logistic (1PL) model, aka Rasch model, and two parameter logistic model (2PL) are implemented. 
 The user can specify whether vague or hierarchical priors are used.
-Two- and three-parameter logistic models are in the pipeline and will be added when available.
+The three-parameter logistic model is in the pipeline and will be added when available.
 
 ## License
 
-py-irt is licensed under the []MIT license](https://opensource.org/licenses/MIT).
+py-irt is licensed under the [MIT license](https://opensource.org/licenses/MIT).
 
 ## Installation
 
