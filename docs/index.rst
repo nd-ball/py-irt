@@ -24,6 +24,11 @@ TwoParameterLogistic
 .. automodule:: py_irt.models.two_param_logistic
    :members: 
 
+
+Theta Estimation
+===============================
+.. automodule:: py_irt.scoring
+   :members:
       
 Indices and tables
 ==================

@@ -9,6 +9,7 @@ from scipy.special import expit
 
 
 def theta_fn(difficulties, student_prior, response_pattern):
+    """Estimate theta for a given response pattern"""
     def fn(theta):
         theta = theta[0] 
         probabilities = expit(theta - difficulties)
@@ -23,7 +24,7 @@ def theta_fn(difficulties, student_prior, response_pattern):
 
 def calculate_theta(difficulties, response_pattern, num_obs=-1):
     """
-    given learned item difficulties and a model response pattern, estimate theta
+    Given learned item difficulties and a model response pattern, estimate theta
     if num_obs > 0, then sample from the observed values for a computational speedup
     """ 
 
@@ -41,7 +42,7 @@ def calculate_theta(difficulties, response_pattern, num_obs=-1):
 
 def calculate_diff_threshold(p_correct, theta):
     """
-    calculate the difficulty threshold where the probability correct given theta is equal to p_correct
+    Calculate the difficulty threshold where the probability correct given theta is equal to p_correct
     p_correct: the desired probability threshold
     theta: estimated model ability at current timestep
     """
