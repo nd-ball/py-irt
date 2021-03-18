@@ -1,5 +1,5 @@
 '''
-functions to facilitate theta estimation
+Functions to facilitate theta estimation
 '''
 
 import numpy as np 
