@@ -12,6 +12,7 @@ pandas = "^1.2.4"
 pyro-ppl = "^1.6.0"
 rich = "^10.2.2"
 scipy = "^1.6.3"
+typer = "^0.3.2"
 
 [tool.poetry.dev-dependencies]
 codecov = "^2.1.11"
