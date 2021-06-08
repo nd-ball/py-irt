@@ -19,19 +19,19 @@ class FourParamLog:
     """4PL IRT Model"""
 
     # pylint: disable=not-callable
-    def __init__(self, priors, device, num_items, num_models, verbose=False):
+    def __init__(self, priors, device, num_items, num_subjects, verbose=False):
         if priors != "hierarchical":
             raise NotImplementedError("Vague prior not implemented")
         if device not in ["cpu", "gpu"]:
             raise ValueError("Options for device are cpu and gpu")
         if num_items <= 0:
             raise ValueError("Number of items must be greater than 0")
-        if num_models <= 0:
+        if num_subjects <= 0:
             raise ValueError("Number of subjects must be greater than 0")
         self.priors = priors
         self.device = device
         self.num_items = num_items
-        self.num_models = num_models
+        self.num_subjects = num_subjects
         self.verbose = verbose
 
     def model_hierarchical(self, models, items, obs):
@@ -87,7 +87,7 @@ class FourParamLog:
             constraint=constraints.unit_interval,
         )
 
-        with pyro.plate("thetas", self.num_models, device=self.device):
+        with pyro.plate("thetas", self.num_subjects, device=self.device):
             ability = pyro.sample("theta", dist.Normal(mu_theta, 1.0 / u_theta))
 
         with pyro.plate("bs", self.num_items, device=self.device):
@@ -154,10 +154,10 @@ class FourParamLog:
             torch.tensor(1.0, device=self.device),
             constraint=constraints.positive,
         )
-        m_theta_param = pyro.param("loc_ability", torch.zeros(self.num_models, device=self.device))
+        m_theta_param = pyro.param("loc_ability", torch.zeros(self.num_subjects, device=self.device))
         s_theta_param = pyro.param(
             "scale_ability",
-            torch.ones(self.num_models, device=self.device),
+            torch.ones(self.num_subjects, device=self.device),
             constraint=constraints.positive,
         )
         m_b_param = pyro.param("loc_diff", torch.zeros(self.num_items, device=self.device))
@@ -183,7 +183,7 @@ class FourParamLog:
         mu_theta = pyro.sample("mu_theta", dist.Normal(loc_mu_theta_param, scale_mu_theta_param))
         u_theta = pyro.sample("u_theta", dist.Gamma(alpha_theta_param, beta_theta_param))
 
-        with pyro.plate("thetas", self.num_models, device=self.device):
+        with pyro.plate("thetas", self.num_subjects, device=self.device):
             pyro.sample("theta", dist.Normal(m_theta_param, s_theta_param))
 
         with pyro.plate("bs", self.num_items, device=self.device):

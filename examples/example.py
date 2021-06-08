@@ -73,9 +73,9 @@ with open("test_data_params.knownslopes.csv", "w") as outfile:
 # print(real_slope)
 # print(responses)
 
-num_models = len(set(models))
+num_subjects = len(set(models))
 num_items = len(set(items))
-# print(num_items, num_models)
+# print(num_items, num_subjects)
 
 models = torch.tensor(models, dtype=torch.long, device=device)
 items = torch.tensor(items, dtype=torch.long, device=device)
@@ -83,10 +83,10 @@ responses = torch.tensor(responses, dtype=torch.float, device=device)
 
 
 # 3. define model and guide accordingly
-m1v = OneParamLog("vague", device, num_items, num_models, args.verbose)
-m1h = OneParamLog("hierarchical", device, num_items, num_models, args.verbose)
-m2v = TwoParamLog("vague", device, num_items, num_models, args.verbose)
-m2h = TwoParamLog("hierarchical", device, num_items, num_models, args.verbose)
+m1v = OneParamLog("vague", device, num_items, num_subjects, args.verbose)
+m1h = OneParamLog("hierarchical", device, num_items, num_subjects, args.verbose)
+m2v = TwoParamLog("vague", device, num_items, num_subjects, args.verbose)
+m2h = TwoParamLog("hierarchical", device, num_items, num_subjects, args.verbose)
 
 
 for m in [m1v, m2v, m1h, m2h]:

@@ -62,9 +62,9 @@ with open(args.response_patterns, "r") as infile:
             iID += 1
         uID += 1
 
-num_models = len(set(models))
+num_subjects = len(set(models))
 num_items = len(set(items))
-print(num_items, num_models)
+print(num_items, num_subjects)
 
 models = torch.tensor(models, dtype=torch.long, device=device)
 items = torch.tensor(items, dtype=torch.long, device=device)
@@ -72,9 +72,9 @@ responses = torch.tensor(responses, dtype=torch.float, device=device)
 
 # 3. define model and guide accordingly
 if args.model == "1PL":
-    m = OneParamLog(args.priors, device, num_items, num_models, verbose=args.verbose)
+    m = OneParamLog(args.priors, device, num_items, num_subjects, verbose=args.verbose)
 elif args.model == "2PL":
-    m = TwoParamLog(args.priors, device, num_items, num_models, verbose=args.verbose)
+    m = TwoParamLog(args.priors, device, num_items, num_subjects, verbose=args.verbose)
 
 # 4. fit irt model with svi, trace-elbo loss
 m.fit(models, items, responses, args.num_epochs)

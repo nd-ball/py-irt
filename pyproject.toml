@@ -10,9 +10,11 @@ python = ">=3.7,<3.10"
 numpy = "^1.20.3"
 pandas = "^1.2.4"
 pyro-ppl = "^1.6.0"
-rich = "^10.2.2"
+rich = "^9.3.0"
 scipy = "^1.6.3"
 typer = "^0.3.2"
+pydantic = "^1.8.2"
+pedroai = "^0.1.15"
 
 [tool.poetry.dev-dependencies]
 codecov = "^2.1.11"

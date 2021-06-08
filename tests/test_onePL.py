@@ -29,7 +29,7 @@ class TestOnePL(unittest.TestCase):
                 models.append(i)
                 items.append(j)
                 responses.append(y)
-        num_models = len(set(models))
+        num_subjects = len(set(models))
         num_items = len(set(items))
         self.models = torch.tensor(models, dtype=torch.long, device=device)
         self.items = torch.tensor(items, dtype=torch.long, device=device)

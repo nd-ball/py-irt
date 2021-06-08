@@ -18,24 +18,24 @@ from functools import partial
 class TwoParamLog:
     """2PL IRT model"""
 
-    def __init__(self, priors, device, num_items, num_models, verbose=False):
+    def __init__(self, priors, device, num_items, num_subjects, verbose=False):
         if priors not in ["vague", "hierarchical"]:
             raise ValueError("Options for priors are vague and hierarchical")
         if device not in ["cpu", "gpu"]:
             raise ValueError("Options for device are cpu and gpu")
         if num_items <= 0:
             raise ValueError("Number of items must be greater than 0")
-        if num_models <= 0:
+        if num_subjects <= 0:
             raise ValueError("Number of subjects must be greater than 0")
         self.priors = priors
         self.device = device
         self.num_items = num_items
-        self.num_models = num_models
+        self.num_subjects = num_subjects
         self.verbose = verbose
 
     def model_vague(self, models, items, obs):
         """Initialize a 2PL model with vague priors"""
-        with pyro.plate("thetas", self.num_models, device=self.device):
+        with pyro.plate("thetas", self.num_subjects, device=self.device):
             ability = pyro.sample(
                 "theta",
                 dist.Normal(
@@ -67,10 +67,10 @@ class TwoParamLog:
     def guide_vague(self, models, items, obs):
         """Initialize a 2PL guide with vague priors"""
         # register learnable params in the param store
-        m_theta_param = pyro.param("loc_ability", torch.zeros(self.num_models, device=self.device))
+        m_theta_param = pyro.param("loc_ability", torch.zeros(self.num_subjects, device=self.device))
         s_theta_param = pyro.param(
             "scale_ability",
-            torch.ones(self.num_models, device=self.device),
+            torch.ones(self.num_subjects, device=self.device),
             constraint=constraints.positive,
         )
         m_b_param = pyro.param("loc_diff", torch.zeros(self.num_items, device=self.device))
@@ -91,7 +91,7 @@ class TwoParamLog:
         )
 
         # guide distributions
-        with pyro.plate("thetas", self.num_models, device=self.device):
+        with pyro.plate("thetas", self.num_subjects, device=self.device):
             dist_theta = dist.Normal(m_theta_param, s_theta_param)
             pyro.sample("theta", dist_theta)
         with pyro.plate("bs", self.num_items, device=self.device):
@@ -139,7 +139,7 @@ class TwoParamLog:
                 torch.tensor(1.0, device=self.device), torch.tensor(1.0, device=self.device)
             ),
         )
-        with pyro.plate("thetas", self.num_models, device=self.device):
+        with pyro.plate("thetas", self.num_subjects, device=self.device):
             ability = pyro.sample("theta", dist.Normal(mu_theta, 1.0 / u_theta))
         with pyro.plate("bs", self.num_items, device=self.device):
             diff = pyro.sample("b", dist.Normal(mu_b, 1.0 / u_b))
@@ -185,10 +185,10 @@ class TwoParamLog:
         beta_a_param = pyro.param(
             "beta_a", torch.tensor(1.0, device=self.device), constraint=constraints.positive
         )
-        m_theta_param = pyro.param("loc_ability", torch.zeros(self.num_models, device=self.device))
+        m_theta_param = pyro.param("loc_ability", torch.zeros(self.num_subjects, device=self.device))
         s_theta_param = pyro.param(
             "scale_ability",
-            torch.ones(self.num_models, device=self.device),
+            torch.ones(self.num_subjects, device=self.device),
             constraint=constraints.positive,
         )
         m_b_param = pyro.param("loc_diff", torch.zeros(self.num_items, device=self.device))
@@ -212,7 +212,7 @@ class TwoParamLog:
         pyro.sample("mu_a", dist.Normal(loc_mu_a_param, scale_mu_a_param))
         pyro.sample("u_a", dist.Gamma(alpha_a_param, beta_a_param))
 
-        with pyro.plate("thetas", self.num_models, device=self.device):
+        with pyro.plate("thetas", self.num_subjects, device=self.device):
             pyro.sample("theta", dist.Normal(m_theta_param, s_theta_param))
         with pyro.plate("bs", self.num_items, device=self.device):
             pyro.sample("b", dist.Normal(m_b_param, s_b_param))
