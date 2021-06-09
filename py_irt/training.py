@@ -4,7 +4,7 @@ import typer
 import torch
 from pydantic import BaseModel
 from py_irt.models import one_param_logistic, two_param_logistic, four_param_logistic
-from pedroai.io import read_jsonlines, safe_file, write_json
+from py_irt.io import read_jsonlines, safe_file, write_json
 
 
 training_app = typer.Typer()
