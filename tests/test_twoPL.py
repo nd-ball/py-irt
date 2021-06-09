@@ -1,4 +1,5 @@
 # preliminaries
+from py_irt.training import IrtModelTrainer
 import numpy as np
 import pyro
 import torch
@@ -34,6 +35,11 @@ class TestTwoPL(unittest.TestCase):
         self.models = torch.tensor(models, dtype=torch.long, device=device)
         self.items = torch.tensor(items, dtype=torch.long, device=device)
         self.responses = torch.tensor(responses, dtype=torch.float, device=device)
+
+    def test_training(self):
+        trainer = IrtModelTrainer(model_type="2pl", data_path="test_fixtures/minitest.jsonlines")
+        trainer.train(iterations=100, device="cpu")
+        trainer.save("/tmp/parameters.json")
 
     def test_priors(self):
         with self.assertRaises(ValueError):

@@ -67,7 +67,9 @@ class TwoParamLog:
     def guide_vague(self, models, items, obs):
         """Initialize a 2PL guide with vague priors"""
         # register learnable params in the param store
-        m_theta_param = pyro.param("loc_ability", torch.zeros(self.num_subjects, device=self.device))
+        m_theta_param = pyro.param(
+            "loc_ability", torch.zeros(self.num_subjects, device=self.device)
+        )
         s_theta_param = pyro.param(
             "scale_ability",
             torch.ones(self.num_subjects, device=self.device),
@@ -185,7 +187,9 @@ class TwoParamLog:
         beta_a_param = pyro.param(
             "beta_a", torch.tensor(1.0, device=self.device), constraint=constraints.positive
         )
-        m_theta_param = pyro.param("loc_ability", torch.zeros(self.num_subjects, device=self.device))
+        m_theta_param = pyro.param(
+            "loc_ability", torch.zeros(self.num_subjects, device=self.device)
+        )
         s_theta_param = pyro.param(
             "scale_ability",
             torch.ones(self.num_subjects, device=self.device),
@@ -234,6 +238,13 @@ class TwoParamLog:
 
         print("[epoch %04d] loss: %.4f" % (j + 1, loss))
         values = ["loc_diff", "scale_diff", "loc_ability", "scale_ability"]
+
+    def export(self):
+        return {
+            "ability": pyro.param("loc_ability").data.tolist(),
+            "diff": pyro.param("loc_diff").data.tolist(),
+            "disc": pyro.param("loc_slope").data.tolist(),
+        }
 
     def fit_MCMC(self, models, items, responses, num_epochs):
         """Fit the IRT model with MCMC"""
