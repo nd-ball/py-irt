@@ -1,3 +1,4 @@
+from py_irt.models import abstract_model
 import pyro
 import pyro.distributions as dist
 import torch
@@ -15,7 +16,7 @@ import pandas as pd
 from functools import partial
 
 
-class OneParamLog:
+class OneParamLog(abstract_model.IrtModel):
     """1PL IRT model"""
 
     def __init__(self, priors, device, num_items, num_subjects, verbose=False):
@@ -162,6 +163,18 @@ class OneParamLog:
             pyro.sample("theta", dist.Normal(m_theta_param, s_theta_param))
         with pyro.plate("bs", self.num_items, device=self.device):
             pyro.sample("b", dist.Normal(m_b_param, s_b_param))
+
+    def get_model(self):
+        if self.priors == "vague":
+            return self.model_vague
+        else:
+            return self.model_hierarchical
+
+    def get_guide(self):
+        if self.priors == "vague":
+            return self.guide_vague
+        else:
+            return self.guide_hierarchical
 
     def fit(self, models, items, responses, num_epochs):
         """Fit the IRT model with variational inference"""
