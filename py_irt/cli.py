@@ -1,3 +1,4 @@
+from py_irt.io import write_json
 import typer
 import time
 from pathlib import Path
@@ -11,7 +12,7 @@ app = typer.Typer()
 
 @app.command()
 def train(
-    model_type: str, data_path: str, output_dir: str, epochs: int = 1000, device: str = "cpu"
+    model_type: str, data_path: str, output_dir: str, epochs: int = 2000, device: str = "cpu"
 ):
     console.log(f"model_type: {model_type} data_path: {model_type}")
     start_time = time.time()
@@ -20,6 +21,7 @@ def train(
     console.log("Training Model...")
     trainer.train(iterations=epochs, device=device)
     trainer.save(output_dir / "parameters.json")
+    write_json(output_dir / "best_parameters.json", trainer._best_params)
     end_time = time.time()
     elapsed_time = end_time - start_time
     console.log("Train time:", elapsed_time)

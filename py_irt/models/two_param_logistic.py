@@ -13,9 +13,10 @@ import pyro.contrib.autoguide as autoguide
 import pandas as pd
 
 from functools import partial
+from py_irt.models import abstract_model
 
 
-class TwoParamLog:
+class TwoParamLog(abstract_model.IrtModel):
     """2PL IRT model"""
 
     def __init__(self, priors, device, num_items, num_subjects, verbose=False):
@@ -221,6 +222,18 @@ class TwoParamLog:
         with pyro.plate("bs", self.num_items, device=self.device):
             pyro.sample("b", dist.Normal(m_b_param, s_b_param))
             pyro.sample("a", dist.Normal(m_a_param, s_a_param))
+
+    def get_model(self):
+        if self.priors == "vague":
+            return self.model_vague
+        else:
+            return self.model_hierarchical
+
+    def get_guide(self):
+        if self.priors == "vague":
+            return self.guide_vague
+        else:
+            return self.guide_hierarchical
 
     def fit(self, models, items, responses, num_epochs):
         """Fit the IRT model with variational inference"""

@@ -1,5 +1,6 @@
 # pylint: disable=unused-argument,unused-variable,not-callable,no-name-in-module,no-member,protected-access
 from functools import partial
+from py_irt.models import abstract_model
 
 import pandas as pd
 import pyro
@@ -15,7 +16,7 @@ from rich.table import Table
 console = Console()
 
 
-class FourParamLog:
+class FourParamLog(abstract_model.IrtModel):
     """4PL IRT Model"""
 
     # pylint: disable=not-callable
@@ -154,7 +155,9 @@ class FourParamLog:
             torch.tensor(1.0, device=self.device),
             constraint=constraints.positive,
         )
-        m_theta_param = pyro.param("loc_ability", torch.zeros(self.num_subjects, device=self.device))
+        m_theta_param = pyro.param(
+            "loc_ability", torch.zeros(self.num_subjects, device=self.device)
+        )
         s_theta_param = pyro.param(
             "scale_ability",
             torch.ones(self.num_subjects, device=self.device),
@@ -200,30 +203,11 @@ class FourParamLog:
             "lambdas": pyro.param("lambdas").data.tolist(),
         }
 
-    def fit(self, models, items, responses, num_epochs):
-        """Fit the IRT model with variational inference"""
-        optim = Adam({"lr": 0.1})
-        svi = SVI(
-            self.model_hierarchical,
-            self.guide_hierarchical,
-            optim,
-            loss=Trace_ELBO(),
-        )
+    def get_guide(self):
+        return self.guide_hierarchical
 
-        pyro.clear_param_store()
-        table = Table()
-        table.add_column("Epoch")
-        table.add_column("Loss")
-        loss = float("inf")
-        with Live(table) as live:
-            live.console.print(f"Training Pyro 3PL Model for {num_epochs} epochs")
-            j = 0
-            for j in range(num_epochs):
-                loss = svi.step(models, items, responses)
-                if j % 100 == 0:
-                    table.add_row(f"{j + 1}", "%.4f" % loss)
-
-            table.add_row(f"{j + 1}", "%.4f" % loss)
+    def get_model(self):
+        return self.model_hierarchical
 
     def summary(self, traces, sites):
         marginal = (
