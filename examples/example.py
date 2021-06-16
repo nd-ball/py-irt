@@ -68,14 +68,8 @@ with open("test_data_params.knownslopes.csv", "w") as outfile:
     np.savetxt(outfile, real_slope, delimiter="\n", fmt="%.5f")
 
 
-# print(real_theta)
-# print(real_diff)
-# print(real_slope)
-# print(responses)
-
 num_subjects = len(set(models))
 num_items = len(set(items))
-# print(num_items, num_subjects)
 
 models = torch.tensor(models, dtype=torch.long, device=device)
 items = torch.tensor(items, dtype=torch.long, device=device)
