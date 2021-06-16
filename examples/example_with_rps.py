@@ -30,14 +30,13 @@ parser.add_argument("-v", "--verbose", action="store_true")
 #parser.add_argument("--response-patterns", help="file with response pattern data", required=True)
 args = parser.parse_args()
 
-device = torch.device("cpu")
+device = "cpu"
 if args.gpu:
-    device = torch.device("cuda")
+    device = "cuda"
 
 # 1. load data from file
 
-data_string = """
-    0,1,1,1
+data_string = """0,1,1,1
     0,0,1,0
     1,1,1,1
     0,0,0,1
@@ -74,7 +73,6 @@ for row in inreader:
 
 num_subjects = len(set(models))
 num_items = len(set(items))
-print(num_items, num_subjects)
 
 models = torch.tensor(models, dtype=torch.long, device=device)
 items = torch.tensor(items, dtype=torch.long, device=device)
@@ -102,19 +100,19 @@ for name in pyro.get_param_store().get_all_param_names():
     if args.verbose:
         print(val)
     if name == "loc_diff":  # mean of difficulty estimates
-        with open(args.response_patterns + ".diffs", "w") as outfile:
+        with open("example.diffs", "w") as outfile:
             outwriter = csv.writer(outfile, delimiter=",")
             for i in range(len(val)):
                 row = [i, val[i]]
                 outwriter.writerow(row)
     elif name == "loc_ability":  # mean of ability estimates
-        with open(args.response_patterns + ".theta", "w") as outfile:
+        with open("example.theta", "w") as outfile:
             outwriter = csv.writer(outfile, delimiter=",")
             for i in range(len(val)):
                 row = [i, val[i]]
                 outwriter.writerow(row)
     elif name == "loc_slope":  # mean of discriminability estimates (if 2PL model) 
-        with open(args.response_patterns + ".slope", "w") as outfile:
+        with open("example.slope", "w") as outfile:
             outwriter = csv.writer(outfile, delimiter=",")
             for i in range(len(val)):
                 row = [i, val[i]]
