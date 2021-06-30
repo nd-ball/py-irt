@@ -12,6 +12,7 @@ from py_irt.models import (
     abstract_model,
     one_param_logistic,
     two_param_logistic,
+    three_param_logistic,
     four_param_logistic,
 )
 from py_irt.io import read_jsonlines, safe_file, write_json
@@ -90,6 +91,7 @@ class Dataset(BaseModel):
 IRT_MODELS = {
     "1pl": one_param_logistic.OneParamLog,
     "2pl": two_param_logistic.TwoParamLog,
+    "3pl": three_param_logistic.ThreeParamLog,
     "4pl": four_param_logistic.FourParamLog,
 }
 
