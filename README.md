@@ -54,7 +54,11 @@ You should see something like this when you run the command given above:
 
 2. I tried installing py-irt using pip from PyPI. But when I try to run the command `py-irt train 4pl ~/path/to/dataset/eg/squad.jsonlines /path/to/output/eg/test-4pl/`, I get an error that says `bash: py-irt: command not found`. How do I fix this?
 
-You may be running into this error because of the old version on PyPI, which has not yet been configured for CLI usage. It's in the pipeline and you should be able to see it soon! In the meantime, do the following steps for replicating CLI function in the repo using these commands:
+The CLI interface was implemented in PyPi version 0.2.1. If you are getting this error try updating py-irt:
+
+`pip install --upgrade py-irt`
+
+Alternatively, you can install the latest version from github:
 
 ```shell
 git clone https://github.com/nd-ball/py-irt.git
@@ -65,7 +69,7 @@ python cli.py train 4pl ~/path/to/dataset/eg/squad.jsonlines /path/to/output/eg/
 
 3. How do I evaluate a trained IRT model?
 
-Evaluation of a trained IRT model is yet to be implemented. You're welcome to implement it and open a pull request!
+Model evaluation is coming soon!
 
 ## Citations
 
