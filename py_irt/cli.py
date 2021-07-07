@@ -28,7 +28,16 @@ def train(
 
 
 @app.command()
-def evaluate():
+def evaluate(
+    model_type: str, data_path: str, output_dir: str, epochs: int = 2000, device: str = "cpu"
+):
+
+    # a) split the data 90/10 
+    # b) train a model
+    # c) save params to disk
+    # d) load the saved parameters
+    # e) estimate p(correct) then convert to binary with 0.5 threshold
+    # a - c are optional and only needed if specified 
     raise NotImplementedError()
 
 
