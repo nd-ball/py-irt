@@ -1,4 +1,5 @@
 # preliminaries
+from py_irt.config import IrtConfig
 import unittest
 
 # import model for testing
@@ -8,8 +9,9 @@ from py_irt.training import IrtModelTrainer
 
 class TestFourPL(unittest.TestCase):
     def test_training(self):
-        trainer = IrtModelTrainer(model_type="4pl", data_path="test_fixtures/minitest.jsonlines")
-        trainer.train(iterations=100, device="cpu")
+        config = IrtConfig(model_type="4pl", epochs=100)
+        trainer = IrtModelTrainer(config=config, data_path="test_fixtures/minitest.jsonlines")
+        trainer.train(device="cpu")
         trainer.save("/tmp/parameters.json")
 
     def test_priors(self):
