@@ -15,6 +15,8 @@ import pandas as pd
 
 from functools import partial
 
+import numpy as np 
+
 
 class OneParamLog(abstract_model.IrtModel):
     """1PL IRT model"""
@@ -210,6 +212,13 @@ class OneParamLog(abstract_model.IrtModel):
         b_sum = self.summary(hmc_posterior, ["b"]).items()
         print(theta_sum)
         print(b_sum)
+
+    def predict(self, models, items):
+        "predict p(correct | params) for a specified list of model, item pairs"
+        model_params = self.export()
+        abilities = np.array([model_params["ability"][i] for i in models])
+        diffs = np.array([model_params["diff"][i] for i in items])
+        return 1 / (1 + np.exp(-(abilities - diffs)))
 
     def summary(self, traces, sites):
         """Aggregate marginals for MCM"""

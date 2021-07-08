@@ -60,6 +60,13 @@ class IrtModelTrainer:
         else:
             self._dataset = dataset
 
+        # filter out test data
+        training_idx = [i for i in range(len(self._dataset.training_example)) if self._dataset.training_example[i]]
+        self._dataset.observation_subjects = [self._dataset.observation_subjects[i] for i in training_idx]
+        self._dataset.observation_items= [self._dataset.observation_items[i] for i in training_idx]
+        self._dataset.observations = [self._dataset.observations[i] for i in training_idx]
+        self._dataset.training_example = [self._dataset.training_example[i] for i in training_idx]
+
         if config.initializers is None:
             initializers = []
         else:
