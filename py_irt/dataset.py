@@ -25,6 +25,8 @@ class Dataset(BaseModel):
     observation_items: List[int]
     # Actual response value, usually an integer
     observations: List[float]
+    # should this example be included in training? 
+    training_example: List[bool]
 
     def get_item_accuracies(self) -> Dict[str, ItemAccuracy]:
         item_accuracies = {}
@@ -40,7 +42,7 @@ class Dataset(BaseModel):
         return item_accuracies
 
     @classmethod
-    def from_jsonlines(cls, data_path: Path):
+    def from_jsonlines(cls, data_path: Path, train_items: dict = None):
         """Parse IRT dataset from jsonlines, formatted in the following way:
         * The dataset is in jsonlines format, each line representing the responses of a subject
         * Each row looks like this:
@@ -68,16 +70,21 @@ class Dataset(BaseModel):
         for idx, subject_id in enumerate(subject_ids):
             subject_id_to_ix[subject_id] = idx
             ix_to_subject_id[idx] = subject_id
-
+        
         observation_subjects = []
         observation_items = []
         observations = []
+        training_example = []
         for idx, line in enumerate(input_data):
             subject_id = line["subject_id"]
             for item_id, response in line["responses"].items():
                 observations.append(response)
                 observation_subjects.append(subject_id_to_ix[subject_id])
                 observation_items.append(item_id_to_ix[item_id])
+                if train_items is not None:
+                    training_example.append(train_items[subject_id][item_id])
+                else:
+                    training_example.append(True)
 
         return cls(
             item_ids=item_ids,
@@ -89,4 +96,5 @@ class Dataset(BaseModel):
             observation_subjects=observation_subjects,
             observation_items=observation_items,
             observations=observations,
+            training_example=training_example,
         )

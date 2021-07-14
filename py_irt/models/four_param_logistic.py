@@ -10,6 +10,8 @@ import torch.distributions.constraints as constraints
 from pyro.infer import SVI, EmpiricalMarginal
 from rich.console import Console
 
+import numpy as np 
+
 console = Console()
 
 
@@ -198,6 +200,18 @@ class FourParamLog(abstract_model.IrtModel):
             "disc": pyro.param("loc_disc").data.tolist(),
             "lambdas": pyro.param("lambdas").data.tolist(),
         }
+
+    def predict(self, subjects, items, params_from_file=None):
+        """predict p(correct | params) for a specified list of model, item pairs"""
+        if params_from_file is not None:
+            model_params = params_from_file
+        else:
+            model_params = self.export()
+        abilities = np.array([model_params["ability"][i] for i in subjects])
+        diffs = np.array([model_params["diff"][i] for i in items])
+        discs = np.array([model_params['disc'][i] for i in items])
+        lambdas = np.array([model_params["lambdas"][i] for i in items])
+        return lambdas / (1 + np.exp(-discs * (abilities - diffs)))
 
     def get_guide(self):
         return self.guide_hierarchical

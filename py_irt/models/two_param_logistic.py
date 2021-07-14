@@ -15,6 +15,8 @@ import pandas as pd
 from functools import partial
 from py_irt.models import abstract_model
 
+import numpy as np
+
 
 class TwoParamLog(abstract_model.IrtModel):
     """2PL IRT model"""
@@ -270,6 +272,17 @@ class TwoParamLog(abstract_model.IrtModel):
         b_sum = self.summary(hmc_posterior, ["b"]).items()
         print(theta_sum)
         print(b_sum)
+
+    def predict(self, subjects, items, params_from_file=None):
+        """predict p(correct | params) for a specified list of model, item pairs"""
+        if params_from_file is not None:
+            model_params = params_from_file
+        else:
+            model_params = self.export()
+        abilities = np.array([model_params["ability"][i] for i in subjects])
+        diffs = np.array([model_params["diff"][i] for i in items])
+        discs = np.array([model_params['disc'][i] for i in items])
+        return 1 / (1 + np.exp(-discs * (abilities - diffs)))
 
     def summary(self, traces, sites):
         """Aggregate marginals for MCM"""

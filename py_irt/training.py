@@ -50,7 +50,7 @@ class IrtModelTrainer:
         self._priors = None
         self._device = None
         self._epochs = None
-        self._irt_model: Optional[abstract_model.IrtModel] = None
+        self.irt_model: Optional[abstract_model.IrtModel] = None
         self._pyro_model = None
         self._pyro_guide = None
         self._verbose = verbose
@@ -59,6 +59,13 @@ class IrtModelTrainer:
             self._dataset = Dataset.from_jsonlines(data_path)
         else:
             self._dataset = dataset
+
+        # filter out test data
+        training_idx = [i for i in range(len(self._dataset.training_example)) if self._dataset.training_example[i]]
+        self._dataset.observation_subjects = [self._dataset.observation_subjects[i] for i in training_idx]
+        self._dataset.observation_items= [self._dataset.observation_items[i] for i in training_idx]
+        self._dataset.observations = [self._dataset.observations[i] for i in training_idx]
+        self._dataset.training_example = [self._dataset.training_example[i] for i in training_idx]
 
         if config.initializers is None:
             initializers = []
@@ -84,15 +91,15 @@ class IrtModelTrainer:
         self._device = device
         self._priors = self._config.priors
         self._epochs = epochs
-        self._irt_model = IRT_MODELS[model_type](
+        self.irt_model = IRT_MODELS[model_type](
             priors=self._config.priors,
             device=device,
             num_items=len(self._dataset.ix_to_item_id),
             num_subjects=len(self._dataset.ix_to_subject_id),
         )
         pyro.clear_param_store()
-        self._pyro_model = self._irt_model.get_model()
-        self._pyro_guide = self._irt_model.get_guide()
+        self._pyro_model = self.irt_model.get_model()
+        self._pyro_guide = self.irt_model.get_guide()
         device = torch.device(device)
         lr = 0.1
         gamma = 0.9999
@@ -135,7 +142,7 @@ class IrtModelTrainer:
             table.add_row(f"{epoch + 1}", "%.4f" % loss, "%.4f" % best_loss, "%.4f" % current_lr)
 
     def export(self):
-        results = self._irt_model.export()
+        results = self.irt_model.export()
         results["irt_model"] = self._config.model_type
         results["item_ids"] = self._dataset.ix_to_item_id
         results["subject_ids"] = self._dataset.ix_to_subject_id
