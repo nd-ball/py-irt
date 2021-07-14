@@ -213,13 +213,13 @@ class OneParamLog(abstract_model.IrtModel):
         print(theta_sum)
         print(b_sum)
 
-    def predict(self, models, items, params_from_file=None):
-        "predict p(correct | params) for a specified list of model, item pairs"
+    def predict(self, subjects, items, params_from_file=None):
+        """predict p(correct | params) for a specified list of model, item pairs"""
         if params_from_file is not None:
             model_params = params_from_file
         else:
             model_params = self.export()
-        abilities = np.array([model_params["ability"][i] for i in models])
+        abilities = np.array([model_params["ability"][i] for i in subjects])
         diffs = np.array([model_params["diff"][i] for i in items])
         return 1 / (1 + np.exp(-(abilities - diffs)))
 

@@ -63,8 +63,7 @@ def train_and_evaluate(
                 model_id = submission["subject_id"]
                 for example_id in submission["responses"].keys():
                     items.append((model_id, example_id))
-            random.seed(seed)
-            train, test = train_test_split(items, train_size=train_size)
+            train, test = train_test_split(items, train_size=train_size, random_state=seed)
             training_dict = {}
             for model_id, example_id in train:
                 training_dict.setdefault(model_id, dict())
@@ -95,8 +94,7 @@ def train_and_evaluate(
         dataset.observations = [dataset.observations[i] for i in testing_idx]
         dataset.training_example = [dataset.training_example[i] for i in testing_idx]
 
-    preds = trainer._irt_model.predict(dataset.observation_subjects, dataset.observation_items)
-    print(preds)
+    preds = trainer.irt_model.predict(dataset.observation_subjects, dataset.observation_items)
     outputs = []
     for i in range(len(preds)):
         outputs.append({
@@ -135,7 +133,7 @@ def evaluate(
 
     # calculate predictions and write them to disk
     config = IrtConfig(model_type=model_type, epochs=epochs, initializers=initializers)
-    _irt_model = IRT_MODELS[model_type](
+    irt_model = IRT_MODELS[model_type](
             priors=config.priors,
             device=device,
             num_items=len(irt_params["item_ids"]),
@@ -144,8 +142,7 @@ def evaluate(
 
     observation_subjects = [entry["subject_id"] for entry in subject_item_pairs]
     observation_items = [entry["item_id"] for entry in subject_item_pairs]
-    preds = _irt_model.predict(observation_subjects, observation_items, irt_params)
-    print(preds)
+    preds = irt_model.predict(observation_subjects, observation_items, irt_params)
     outputs = []
     for i in range(len(preds)):
         outputs.append({
