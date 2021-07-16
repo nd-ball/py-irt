@@ -122,8 +122,7 @@ def evaluate(
     seed: int = 42,
     train_size: float = 0.9,
 ):
-    # removed console.log since data_path is not passed into this function as an 
-    # argument
+    console.log(f"model_type: {model_type}")
     start_time = time.time()
     console.log("Evaluating Model...")
     # load saved params
@@ -143,8 +142,7 @@ def evaluate(
 
     observation_subjects = [entry["subject_id"] for entry in subject_item_pairs]
     # since all subjects use same set of items for predictions (as visible from 
-    # squad.jsonlines), changed this from entry["item_id"] since "item_id" does 
-    # not exist as a key in the jsonlines files.
+    # squad.jsonlines), getting all items from one subject
     observation_items = subject_item_pairs[0]["responses"].keys()
     preds = irt_model.predict(observation_subjects, observation_items, irt_params)
     outputs = []
