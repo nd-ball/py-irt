@@ -69,7 +69,26 @@ python cli.py train 4pl ~/path/to/dataset/eg/squad.jsonlines /path/to/output/eg/
 
 3. How do I evaluate a trained IRT model?
 
-Model evaluation is coming soon!
+If you have already trained an IRT model you can use the following command:
+
+`py-irt evaluate 4pl ~/path/to/data/best_parameters.json ~/path/to/data/test_pairs.jsonlines /path/to/output/eg/test-4pl/`
+
+Where `test_pairs.jsonlines` is a jsonlines file with the following format:
+
+```
+{"subject_id": "ken", "item_id": "q1"}
+{"subject_id": "ken", "item_id": "q2"}
+{"subject_id": "burt", "item_id": "q1"}
+{"subject_id": "burt", "item_id": "q3"}
+```
+
+If you would like to both train and evaluate a model you can use the following command:
+
+`py-irt train_and_evaluate 4pl ~/path/to/data/squad.jsonlines /path/to/output/eg/test-4pl/`
+
+By default this will train a model with 90% of the provided data and evaluate with the remaining 10%.
+To change this behavior you can add `--evaluation all` to the command above. 
+The model will train and evaluate against all of the data.
 
 ## Citations
 

@@ -122,7 +122,8 @@ def evaluate(
     seed: int = 42,
     train_size: float = 0.9,
 ):
-    console.log(f"model_type: {model_type}")
+  
+    console.log(f"model_type: {model_type}, parameter_path: {parameter_path}, test_pairs_path: {test_pairs_path}")
     start_time = time.time()
     console.log("Evaluating Model...")
     # load saved params
