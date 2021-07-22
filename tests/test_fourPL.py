@@ -14,18 +14,14 @@ class TestFourPL(unittest.TestCase):
         trainer.train(device="cpu")
         trainer.save("/tmp/parameters.json")
 
-    def test_priors(self):
-        with self.assertRaises(NotImplementedError):
-            m = FourParamLog("testing", "cpu", 100, 100, False)
-
     def test_device(self):
         with self.assertRaises(ValueError):
-            m = FourParamLog("hierarchical", "zpu", 100, 100, False)
+            m = FourParamLog(device="zpu", num_items=100, num_subjects=100, verbose=False)
 
     def test_num_items(self):
         with self.assertRaises(ValueError):
-            m = FourParamLog("hierarchical", "cpu", -100, 100, False)
+            m = FourParamLog(device="cpu", num_items=-100, num_subjects=100, verbose=False)
 
     def test_num_subjects(self):
         with self.assertRaises(ValueError):
-            m = FourParamLog("hierarchical", "cpu", 100, -100, False)
+            m = FourParamLog(device="cpu", num_items=100, num_subjects=-100, verbose=False)

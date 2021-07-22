@@ -92,12 +92,15 @@ class IrtModelTrainer:
         self._device = device
         self._priors = self._config.priors
         self._epochs = epochs
-        self.irt_model = IrtModel.from_name(model_type)(
-            priors=self._config.priors,
-            device=device,
-            num_items=len(self._dataset.ix_to_item_id),
-            num_subjects=len(self._dataset.ix_to_subject_id),
-        )
+        args = {
+            "device": device,
+            "num_items": len(self._dataset.ix_to_item_id),
+            "num_subjects": len(self._dataset.ix_to_subject_id),
+        }
+        if self._config.priors is not None:
+            args["priors"] = self._config.priors
+
+        self.irt_model = IrtModel.from_name(model_type)(**args)
         pyro.clear_param_store()
         self._pyro_model = self.irt_model.get_model()
         self._pyro_guide = self.irt_model.get_guide()

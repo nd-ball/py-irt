@@ -22,22 +22,17 @@ import numpy as np
 class TwoParamLog(abstract_model.IrtModel):
     """2PL IRT model"""
 
-    def __init__(self, priors, device, num_items, num_subjects, verbose=False):
+    def __init__(
+        self, *, priors: str, num_items: int, num_subjects: int, verbose=False, device: str = "cpu"
+    ):
+        super().__init__(
+            num_items=num_items, num_subjects=num_subjects, device=device, verbose=verbose
+        )
         if priors not in ["vague", "hierarchical"]:
             raise ValueError("Options for priors are vague and hierarchical")
-        if device not in ["cpu", "gpu"]:
-            raise ValueError("Options for device are cpu and gpu")
-        if num_items <= 0:
-            raise ValueError("Number of items must be greater than 0")
-        if num_subjects <= 0:
-            raise ValueError("Number of subjects must be greater than 0")
         self.priors = priors
-        self.device = device
-        self.num_items = num_items
-        self.num_subjects = num_subjects
-        self.verbose = verbose
 
-    def model_vague(self, models, items, obs):
+    def model_vague(self, subjects, items, obs):
         """Initialize a 2PL model with vague priors"""
         with pyro.plate("thetas", self.num_subjects, device=self.device):
             ability = pyro.sample(
@@ -64,11 +59,11 @@ class TwoParamLog(abstract_model.IrtModel):
         with pyro.plate("observe_data", obs.size(0), device=self.device):
             pyro.sample(
                 "obs",
-                dist.Bernoulli(logits=(slope[items] * (ability[models] - diff[items]))),
+                dist.Bernoulli(logits=(slope[items] * (ability[subjects] - diff[items]))),
                 obs=obs,
             )
 
-    def guide_vague(self, models, items, obs):
+    def guide_vague(self, subjects, items, obs):
         """Initialize a 2PL guide with vague priors"""
         # register learnable params in the param store
         m_theta_param = pyro.param(
@@ -107,7 +102,7 @@ class TwoParamLog(abstract_model.IrtModel):
             dist_a = dist.Normal(m_a_param, s_a_param)
             pyro.sample("a", dist_a)
 
-    def model_hierarchical(self, models, items, obs):
+    def model_hierarchical(self, subjects, items, obs):
         """Initialize a 2PL model with hierarchical priors"""
         mu_b = pyro.sample(
             "mu_b",
@@ -153,11 +148,11 @@ class TwoParamLog(abstract_model.IrtModel):
         with pyro.plate("observe_data", obs.size(0)):
             pyro.sample(
                 "obs",
-                dist.Bernoulli(logits=slope[items] * (ability[models] - diff[items])),
+                dist.Bernoulli(logits=slope[items] * (ability[subjects] - diff[items])),
                 obs=obs,
             )
 
-    def guide_hierarchical(self, models, items, obs):
+    def guide_hierarchical(self, subjects, items, obs):
         """Initialize a 2PL guide with hierarchical priors"""
         loc_mu_b_param = pyro.param("loc_mu_b", torch.tensor(0.0, device=self.device))
         scale_mu_b_param = pyro.param(
@@ -237,23 +232,6 @@ class TwoParamLog(abstract_model.IrtModel):
             return self.guide_vague
         else:
             return self.guide_hierarchical
-
-    def fit(self, models, items, responses, num_epochs):
-        """Fit the IRT model with variational inference"""
-        optim = Adam({"lr": 0.1})
-        if self.priors == "vague":
-            svi = SVI(self.model_vague, self.guide_vague, optim, loss=Trace_ELBO())
-        else:
-            svi = SVI(self.model_hierarchical, self.guide_hierarchical, optim, loss=Trace_ELBO())
-
-        pyro.clear_param_store()
-        for j in range(num_epochs):
-            loss = svi.step(models, items, responses)
-            if j % 100 == 0 and self.verbose:
-                print("[epoch %04d] loss: %.4f" % (j + 1, loss))
-
-        print("[epoch %04d] loss: %.4f" % (j + 1, loss))
-        values = ["loc_diff", "scale_diff", "loc_ability", "scale_ability"]
 
     def export(self):
         return {

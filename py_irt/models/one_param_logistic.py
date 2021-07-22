@@ -22,20 +22,15 @@ import numpy as np
 class OneParamLog(abstract_model.IrtModel):
     """1PL IRT model"""
 
-    def __init__(self, priors, device, num_items, num_subjects, verbose=False):
+    def __init__(
+        self, *, priors: str, num_items: int, num_subjects: int, verbose=False, device: str = "cpu"
+    ):
+        super().__init__(
+            device=device, num_items=num_items, num_subjects=num_subjects, verbose=verbose
+        )
         if priors not in ["vague", "hierarchical"]:
             raise ValueError("Options for priors are vague and hierarchical")
-        if device not in ["cpu", "gpu"]:
-            raise ValueError("Options for device are cpu and gpu")
-        if num_items <= 0:
-            raise ValueError("Number of items must be greater than 0")
-        if num_subjects <= 0:
-            raise ValueError("Number of subjects must be greater than 0")
         self.priors = priors
-        self.device = device
-        self.num_items = num_items
-        self.num_subjects = num_subjects
-        self.verbose = verbose
 
     def model_vague(self, models, items, obs):
         """Initialize a 1PL model with vague priors"""
