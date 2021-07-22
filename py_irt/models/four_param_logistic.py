@@ -10,11 +10,12 @@ import torch.distributions.constraints as constraints
 from pyro.infer import SVI, EmpiricalMarginal
 from rich.console import Console
 
-import numpy as np 
+import numpy as np
 
 console = Console()
 
 
+@abstract_model.IrtModel.register("4pl")
 class FourParamLog(abstract_model.IrtModel):
     """4PL IRT Model"""
 
@@ -209,7 +210,7 @@ class FourParamLog(abstract_model.IrtModel):
             model_params = self.export()
         abilities = np.array([model_params["ability"][i] for i in subjects])
         diffs = np.array([model_params["diff"][i] for i in items])
-        discs = np.array([model_params['disc'][i] for i in items])
+        discs = np.array([model_params["disc"][i] for i in items])
         lambdas = np.array([model_params["lambdas"][i] for i in items])
         return lambdas / (1 + np.exp(-discs * (abilities - diffs)))
 

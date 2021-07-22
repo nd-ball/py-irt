@@ -15,9 +15,10 @@ import pandas as pd
 
 from functools import partial
 
-import numpy as np 
+import numpy as np
 
 
+@abstract_model.IrtModel.register("1pl")
 class OneParamLog(abstract_model.IrtModel):
     """1PL IRT model"""
 

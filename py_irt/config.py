@@ -1,6 +1,9 @@
 from typing import List, Dict, Union, Optional
 from pydantic import BaseModel
 
+# pylint: disable=unused-import
+from py_irt.models import *
+
 
 class IrtConfig(BaseModel):
     model_type: str

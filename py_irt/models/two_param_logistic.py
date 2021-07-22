@@ -18,6 +18,7 @@ from py_irt.models import abstract_model
 import numpy as np
 
 
+@abstract_model.IrtModel.register("2pl")
 class TwoParamLog(abstract_model.IrtModel):
     """2PL IRT model"""
 
@@ -281,7 +282,7 @@ class TwoParamLog(abstract_model.IrtModel):
             model_params = self.export()
         abilities = np.array([model_params["ability"][i] for i in subjects])
         diffs = np.array([model_params["diff"][i] for i in items])
-        discs = np.array([model_params['disc'][i] for i in items])
+        discs = np.array([model_params["disc"][i] for i in items])
         return 1 / (1 + np.exp(-discs * (abilities - diffs)))
 
     def summary(self, traces, sites):
