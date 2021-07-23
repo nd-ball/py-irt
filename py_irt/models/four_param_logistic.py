@@ -7,11 +7,10 @@ import pyro
 import pyro.distributions as dist
 import torch
 import torch.distributions.constraints as constraints
-from pyro.infer import SVI, EmpiricalMarginal, Trace_ELBO
-from pyro.optim import Adam
+from pyro.infer import SVI, EmpiricalMarginal
 from rich.console import Console
-from rich.live import Live
-from rich.table import Table
+
+import numpy as np 
 
 console = Console()
 
@@ -35,7 +34,7 @@ class FourParamLog(abstract_model.IrtModel):
         self.num_subjects = num_subjects
         self.verbose = verbose
 
-    def model_hierarchical(self, models, items, obs):
+    def model_hierarchical(self, subjects, items, obs):
         mu_b = pyro.sample(
             "mu_b",
             dist.Normal(
@@ -98,15 +97,14 @@ class FourParamLog(abstract_model.IrtModel):
             disc = pyro.sample("gamma", dist.Normal(mu_gamma, 1.0 / u_gamma))
 
         with pyro.plate("observe_data", obs.size(0)):
-            p_star = torch.sigmoid(disc[items] * (ability[models] - diff[items]))
+            p_star = torch.sigmoid(disc[items] * (ability[subjects] - diff[items]))
             pyro.sample(
                 "obs",
                 dist.Bernoulli(probs=lambdas[items] * p_star),
                 obs=obs,
             )
 
-    def guide_hierarchical(self, models, items, obs):
-
+    def guide_hierarchical(self, subjects, items, obs):
         loc_mu_b_param = pyro.param("loc_mu_b", torch.tensor(0.0, device=self.device))
         scale_mu_b_param = pyro.param(
             "scale_mu_b",
@@ -202,6 +200,18 @@ class FourParamLog(abstract_model.IrtModel):
             "disc": pyro.param("loc_disc").data.tolist(),
             "lambdas": pyro.param("lambdas").data.tolist(),
         }
+
+    def predict(self, subjects, items, params_from_file=None):
+        """predict p(correct | params) for a specified list of model, item pairs"""
+        if params_from_file is not None:
+            model_params = params_from_file
+        else:
+            model_params = self.export()
+        abilities = np.array([model_params["ability"][i] for i in subjects])
+        diffs = np.array([model_params["diff"][i] for i in items])
+        discs = np.array([model_params['disc'][i] for i in items])
+        lambdas = np.array([model_params["lambdas"][i] for i in items])
+        return lambdas / (1 + np.exp(-discs * (abilities - diffs)))
 
     def get_guide(self):
         return self.guide_hierarchical

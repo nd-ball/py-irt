@@ -1,6 +1,8 @@
 [tool.poetry]
 name = "py-irt"
-version = "0.1.1"
+version = "0.3.2"
+readme = "README.md"
+homepage = "https://github.com/nd-ball/py-irt/"
 description = "Bayesian IRT models in Python"
 authors = ["John P. Lalor <john.lalor@nd.edu>"]
 license = "MIT License"
@@ -14,6 +16,7 @@ rich = "^9.3.0"
 scipy = "^1.6.3"
 typer = "^0.3.2"
 pydantic = "^1.8.2"
+scikit-learn = "^0.24.2"
 
 [tool.poetry.dev-dependencies]
 codecov = "^2.1.11"
