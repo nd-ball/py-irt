@@ -1,0 +1,3 @@
+model_type = 'multidim_2pl'
+epochs = 4000
+dims = 5

@@ -34,13 +34,13 @@ class IrtModel(abc.ABC):
     @classmethod
     def from_name(cls, name: str):
         if name not in _IRT_REGISTRY:
-            raise ValueError(f"Unknown model name: {name}")
+            raise ValueError(f"Unknown model name: {name}, Registry:\n{_IRT_REGISTRY}")
         return _IRT_REGISTRY[name]
 
     @classmethod
     def validate_name(cls, name: str):
         if name not in _IRT_REGISTRY:
-            raise ValueError(f"Unknown model name: {name}")
+            raise ValueError(f"Unknown model name: {name}, Registry:\n{_IRT_REGISTRY}")
         return
 
     @abc.abstractmethod
