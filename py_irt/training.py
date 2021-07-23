@@ -1,4 +1,4 @@
-from typing import Optional, List, Union, Dict
+from typing import Optional, Union, Dict
 from pathlib import Path
 
 import typer
@@ -11,6 +11,8 @@ from rich.console import Console
 from rich.live import Live
 from rich.table import Table
 
+# These imports are necessary to have @register run
+# pylint: disable=unused-import
 from py_irt.models import (
     abstract_model,
     one_param_logistic,
@@ -19,19 +21,13 @@ from py_irt.models import (
 )
 from py_irt.io import safe_file, write_json
 from py_irt.dataset import Dataset
-from py_irt.initializers import DifficultySignInitializer, INITIALIZERS, IrtInitializer
+from py_irt.initializers import INITIALIZERS, IrtInitializer
 from py_irt.config import IrtConfig
+from py_irt.models.abstract_model import IrtModel
 
 
 training_app = typer.Typer()
 console = Console()
-
-
-IRT_MODELS = {
-    "1pl": one_param_logistic.OneParamLog,
-    "2pl": two_param_logistic.TwoParamLog,
-    "4pl": four_param_logistic.FourParamLog,
-}
 
 
 class IrtModelTrainer:
@@ -45,8 +41,7 @@ class IrtModelTrainer:
     ) -> None:
         self._data_path = data_path
         self._config = config
-        if config.model_type not in IRT_MODELS:
-            raise ValueError(f"{config.model_type} not {IRT_MODELS.keys()}")
+        IrtModel.validate_name(config.model_type)
         self._priors = None
         self._device = None
         self._epochs = None
@@ -61,9 +56,15 @@ class IrtModelTrainer:
             self._dataset = dataset
 
         # filter out test data
-        training_idx = [i for i in range(len(self._dataset.training_example)) if self._dataset.training_example[i]]
-        self._dataset.observation_subjects = [self._dataset.observation_subjects[i] for i in training_idx]
-        self._dataset.observation_items= [self._dataset.observation_items[i] for i in training_idx]
+        training_idx = [
+            i
+            for i in range(len(self._dataset.training_example))
+            if self._dataset.training_example[i]
+        ]
+        self._dataset.observation_subjects = [
+            self._dataset.observation_subjects[i] for i in training_idx
+        ]
+        self._dataset.observation_items = [self._dataset.observation_items[i] for i in training_idx]
         self._dataset.observations = [self._dataset.observations[i] for i in training_idx]
         self._dataset.training_example = [self._dataset.training_example[i] for i in training_idx]
 
@@ -91,12 +92,15 @@ class IrtModelTrainer:
         self._device = device
         self._priors = self._config.priors
         self._epochs = epochs
-        self.irt_model = IRT_MODELS[model_type](
-            priors=self._config.priors,
-            device=device,
-            num_items=len(self._dataset.ix_to_item_id),
-            num_subjects=len(self._dataset.ix_to_subject_id),
-        )
+        args = {
+            "device": device,
+            "num_items": len(self._dataset.ix_to_item_id),
+            "num_subjects": len(self._dataset.ix_to_subject_id),
+        }
+        if self._config.priors is not None:
+            args["priors"] = self._config.priors
+
+        self.irt_model = IrtModel.from_name(model_type)(**args)
         pyro.clear_param_store()
         self._pyro_model = self.irt_model.get_model()
         self._pyro_guide = self.irt_model.get_guide()
