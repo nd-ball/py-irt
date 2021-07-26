@@ -5,6 +5,7 @@ import copy
 from pathlib import Path
 
 import typer
+import toml
 from rich.console import Console
 from sklearn.model_selection import train_test_split
 
@@ -23,13 +24,45 @@ def train(
     model_type: str,
     data_path: str,
     output_dir: str,
-    epochs: int = 2000,
+    epochs: Optional[int] = None,
+    priors: Optional[str] = None,
+    dims: Optional[int] = None,
+    lr: Optional[float] = None,
+    lr_decay: Optional[float] = None,
     device: str = "cpu",
     initializers: Optional[List[str]] = None,
+    config_path: Optional[str] = None,
 ):
-    console.log(f"model_type: {model_type} data_path: {data_path}")
+    if config_path is None:
+        parsed_config = {}
+    else:
+        if config_path.endswith(".toml"):
+            with open(config_path) as f:
+                parsed_config = toml.load(f)
+        else:
+            parsed_config = read_json(config_path)
+
+    if model_type != parsed_config["model_type"]:
+        raise ValueError("Mismatching model types in args and config")
+    args_config = {
+        "priors": priors,
+        "dims": dims,
+        "lr": lr,
+        "lr_decay": lr_decay,
+        "epochs": epochs,
+        "initializers": initializers,
+        "model_type": model_type,
+    }
+    for key, value in args_config.items():
+        if value is not None:
+            parsed_config[key] = value
+
+    config = IrtConfig(**parsed_config)
+    console.log(f"config: {config}")
+
+    console.log(f"data_path: {data_path}")
+    console.log(f"output directory: {output_dir}")
     start_time = time.time()
-    config = IrtConfig(model_type=model_type, epochs=epochs, initializers=initializers)
     trainer = IrtModelTrainer(config=config, data_path=data_path)
     output_dir = Path(output_dir)
     console.log("Training Model...")
@@ -55,6 +88,7 @@ def train_and_evaluate(
 ):
 
     console.log(f"model_type: {model_type} data_path: {data_path}")
+    console.log(f"output directory: {output_dir}")
     start_time = time.time()
     config = IrtConfig(model_type=model_type, epochs=epochs, initializers=initializers)
     if evaluation == "heldout":
@@ -131,6 +165,7 @@ def evaluate(
     console.log(
         f"model_type: {model_type}, parameter_path: {parameter_path}, test_pairs_path: {test_pairs_path}"
     )
+    console.log(f"output directory: {output_dir}")
     start_time = time.time()
     console.log("Evaluating Model...")
     # load saved params
