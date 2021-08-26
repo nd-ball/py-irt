@@ -19,6 +19,7 @@ from py_irt.models import (
     two_param_logistic,
     four_param_logistic,
     multidim_2pl,
+    amortized_1pl
 )
 from py_irt.io import safe_file, write_json
 from py_irt.dataset import Dataset
@@ -51,10 +52,15 @@ class IrtModelTrainer:
         self._pyro_guide = None
         self._verbose = verbose
         self.best_params = None
+        self.amortized = "amortized" in self._config.model_type
         if dataset is None:
-            self._dataset = Dataset.from_jsonlines(data_path)
+            self._dataset = Dataset.from_jsonlines(data_path, amortized=self.amortized)
         else:
             self._dataset = dataset
+
+        if self.amortized:
+            self._config.vocab_size = len(self._dataset.observation_items[0])
+        print(self._config.vocab_size)
 
         # filter out test data
         training_idx = [
@@ -101,9 +107,14 @@ class IrtModelTrainer:
         # TODO: Find a better solution to this
         if self._config.priors is not None:
             args["priors"] = self._config.priors
+        else:
+            args["priors"] = "vague"
 
         if self._config.dims is not None:
             args["dims"] = self._config.dims
+        args["dropout"] =  self._config.dropout
+        args["hidden"] = self._config.hidden
+        args["vocab_size"] = self._config.vocab_size
 
         console.log(f"Parsed Model Args: {args}")
         self.irt_model = IrtModel.from_name(model_type)(**args)

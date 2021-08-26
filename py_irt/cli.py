@@ -32,6 +32,8 @@ def train(
     device: str = "cpu",
     initializers: Optional[List[str]] = None,
     config_path: Optional[str] = None,
+    dropout: Optional[float] = 0.5,
+    hidden: Optional[int] = 100
 ):
     if config_path is None:
         parsed_config = {}
@@ -42,8 +44,7 @@ def train(
         else:
             parsed_config = read_json(config_path)
 
-    if model_type != parsed_config["model_type"]:
-        raise ValueError("Mismatching model types in args and config")
+    
     args_config = {
         "priors": priors,
         "dims": dims,
@@ -52,10 +53,15 @@ def train(
         "epochs": epochs,
         "initializers": initializers,
         "model_type": model_type,
-    }
+        "dropout": dropout,
+        "hidden": hidden,
+    }        
     for key, value in args_config.items():
         if value is not None:
             parsed_config[key] = value
+
+    if model_type != parsed_config["model_type"]:
+        raise ValueError("Mismatching model types in args and config")
 
     config = IrtConfig(**parsed_config)
     console.log(f"config: {config}")
