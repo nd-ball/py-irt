@@ -96,9 +96,10 @@ class Amortized1PL(abstract_model.IrtModel):
 
     def model_irt(self, models, items, obs):
         num_models = len(set(models))
-        num_items = self.num_items
+        num_items = len(items)
         options = dict(dtype=torch.float64, device=self.device)
-        xs = torch.flatten(items, start_dim=1)
+        #xs = torch.flatten(items, start_dim=1)
+        xs = items
         models = torch.tensor(models, dtype=torch.long, device=items.device)
         items = torch.tensor(items, dtype=torch.long, device=items.device)
         obs = torch.tensor(obs, dtype=torch.float, device=items.device)
@@ -106,13 +107,11 @@ class Amortized1PL(abstract_model.IrtModel):
         with pyro.plate("thetas"):
             ability = pyro.sample('theta', dist.Normal(torch.zeros(num_models, **options),
                 torch.ones(num_models, **options)))
-        with pyro.plate("diffs"):
+        with pyro.plate("diffs", num_items):
             # sample the item difficulty from the prior distribution
-            diff_prior_loc = torch.zeros(num_items, **options) 
-            diff_prior_scale = torch.ones(num_items, **options).fill_(1.e3)
-            diff = pyro.sample('b', dist.Normal(diff_prior_loc, diff_prior_scale).to_event(1)) 
-            diff = diff.unsqueeze(1).float()
-
+            diff_prior_loc = torch.zeros(num_items, **options).unsqueeze(1).float()
+            diff_prior_scale = torch.ones(num_items, **options).fill_(1.e3).unsqueeze(1).float()
+            diff = pyro.sample('b', dist.Normal(diff_prior_loc, diff_prior_scale).to_event(1))
             loc = self.decoder.forward(diff)
             total_count = int(xs.sum(-1).max())
             pyro.sample(
@@ -123,18 +122,18 @@ class Amortized1PL(abstract_model.IrtModel):
             #diff = pyro.sample('b', dist.Normal(torch.zeros(num_items, **options),
             #    torch.tensor(num_items, **options).fill_(1.e-3)))
 
-        with pyro.plate("data"):
-            pyro.sample("obs", dist.Bernoulli(logits=ability[models] - diff[items]), obs=obs)
+        with pyro.plate("data", len(obs)):
+            pyro.sample("obs", dist.Bernoulli(logits=ability[models] - diff).to_event(1), obs=obs)
         
     def guide_irt(self, models, items, obs):
         num_models = len(set(models))
-        num_items = self.num_items
+        num_items = len(items)
         options = dict(dtype=torch.float64, device=self.device)
-        xs = torch.flatten(items, start_dim=1)
-
+        #xs = torch.flatten(items, start_dim=1)
+        xs = items
         # vectorize
         models = torch.tensor(models, dtype=torch.long, device=self.device)
-        items = torch.tensor(items, dtype=torch.long, device=self.device)
+        items = torch.tensor(items, dtype=torch.float, device=self.device)
         obs = torch.tensor(obs, dtype=torch.float, device=self.device)
 
 
@@ -147,7 +146,7 @@ class Amortized1PL(abstract_model.IrtModel):
             pyro.sample("theta", dist_theta)
 
         # items 
-        with pyro.plate("diffs"):
+        with pyro.plate("diffs", num_items):
             irt_batch_size = 256
             loc_diffs_all, scale_diffs_all = [], []
             for i in range(0, len(items), irt_batch_size):
@@ -159,14 +158,13 @@ class Amortized1PL(abstract_model.IrtModel):
                 else:
                     # pick out the appropriate images from xs based on items idx
                     batch_xs = items[i:i+irt_batch_size]
-                    #print(batch_xs.shape)
                     loc_diffs, scale_diffs = self.encoder.forward(batch_xs)            
                     loc_diffs_all.extend(loc_diffs)
                     scale_diffs_all.extend(scale_diffs)
-            loc_diffs_all = torch.tensor(loc_diffs_all, **options) 
-            scale_diffs_all = torch.tensor(scale_diffs_all, **options)            
+            loc_diffs_all = torch.tensor(loc_diffs_all, **options).unsqueeze(1).float()
+            scale_diffs_all = torch.tensor(scale_diffs_all, **options).unsqueeze(1).float()
             dist_b = dist.Normal(loc_diffs_all, scale_diffs_all)
-            pyro.sample('b', dist_b)
+            pyro.sample('b', dist_b.to_event(1))
 
     def get_model(self):
         return self.model_irt
@@ -197,7 +195,7 @@ class Amortized1PL(abstract_model.IrtModel):
     def export(self):
         return {
             "ability": pyro.param("loc_ability").data.tolist(),
-            "diff": pyro.param("loc_diff").data.tolist(),
+            #"diff": pyro.param("loc_diff").data.tolist(),
         }
 
     def fit_MCMC(self, models, items, responses, num_epochs):

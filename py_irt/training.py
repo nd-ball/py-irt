@@ -140,6 +140,7 @@ class IrtModelTrainer:
         _ = self._pyro_guide(subjects, items, responses)
         for init in self._initializers:
             init.initialize()
+
         table = Table()
         table.add_column("Epoch")
         table.add_column("Loss")
