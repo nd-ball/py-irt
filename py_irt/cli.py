@@ -42,8 +42,6 @@ def train(
         else:
             parsed_config = read_json(config_path)
 
-    if model_type != parsed_config["model_type"]:
-        raise ValueError("Mismatching model types in args and config")
     args_config = {
         "priors": priors,
         "dims": dims,
@@ -56,6 +54,9 @@ def train(
     for key, value in args_config.items():
         if value is not None:
             parsed_config[key] = value
+
+    if model_type != parsed_config["model_type"]:
+        raise ValueError("Mismatching model types in args and config")
 
     config = IrtConfig(**parsed_config)
     console.log(f"config: {config}")
