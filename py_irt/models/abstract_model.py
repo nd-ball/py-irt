@@ -10,8 +10,8 @@ class IrtModel(abc.ABC):
         self, *, num_items: int, num_subjects: int, verbose: bool = False, device: str = "cpu"
     ) -> None:
         super().__init__()
-        if device not in ["cpu", "gpu"]:
-            raise ValueError("Options for device are cpu and gpu")
+        if device not in ["cpu", "cuda"]:
+            raise ValueError("Options for device are cpu and cuda")
         if num_items <= 0:
             raise ValueError("Number of items must be greater than 0")
         if num_subjects <= 0:

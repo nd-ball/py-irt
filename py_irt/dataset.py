@@ -79,6 +79,7 @@ class Dataset(BaseModel):
         observation_items = []
         observations = []
         training_example = []
+        print(amortized)
         for idx, line in enumerate(input_data):
             subject_id = line["subject_id"]
             for item_id, response in line["responses"].items():

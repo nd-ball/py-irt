@@ -155,7 +155,7 @@ class IrtModelTrainer:
                 loss = svi.step(subjects, items, responses)
                 if loss < best_loss:
                     best_loss = loss
-                    self.best_params = self.export()
+                    self.best_params = self.export(items)
                 scheduler.step()
                 current_lr = current_lr * self._config.lr_decay
                 if epoch % 100 == 0:
@@ -164,13 +164,17 @@ class IrtModelTrainer:
                     )
 
             table.add_row(f"{epoch + 1}", "%.4f" % loss, "%.4f" % best_loss, "%.4f" % current_lr)
+            self.last_params = self.export(items)
 
-    def export(self):
-        results = self.irt_model.export()
+    def export(self, items):
+        if self.amortized:
+            results = self.irt_model.export(items)
+        else:
+            results = self.irt_model.export()
         results["irt_model"] = self._config.model_type
         results["item_ids"] = self._dataset.ix_to_item_id
         results["subject_ids"] = self._dataset.ix_to_subject_id
         return results
 
     def save(self, output_path: Union[str, Path]):
-        write_json(safe_file(output_path), self.export())
+        write_json(safe_file(output_path), self.last_params)

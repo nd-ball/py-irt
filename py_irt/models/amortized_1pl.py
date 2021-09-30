@@ -192,10 +192,14 @@ class Amortized1PL(abstract_model.IrtModel):
         #print("[epoch %04d] loss: %.4f" % (j + 1, loss_diff))
         values = ["loc_diff", "scale_diff", "loc_ability", "scale_ability"]
 
-    def export(self):
+    def export(self, items):
+        items = torch.tensor(items, dtype=torch.float)
+        diffs, _ = self.encoder.forward(items)
+        diffs = diffs.squeeze().detach().numpy()
+
         return {
             "ability": pyro.param("loc_ability").data.tolist(),
-            #"diff": pyro.param("loc_diff").data.tolist(),
+            "diff": diffs.tolist()
         }
 
     def fit_MCMC(self, models, items, responses, num_epochs):
@@ -215,10 +219,12 @@ class Amortized1PL(abstract_model.IrtModel):
         if params_from_file is not None:
             model_params = params_from_file
         else:
-            model_params = self.export()
+            model_params = self.export(items)
         abilities = np.array([model_params["ability"][i] for i in subjects])
-        #diffs = np.array([model_params["diff"][i] for i in items])
-        diffs, _ = self.decoder.forward(items)
+        diffs = np.array(model_params["diff"])
+        #items = torch.tensor(items, dtype=torch.float)
+        #diffs, _ = self.encoder.forward(items)
+        #diffs = diffs.squeeze().detach().numpy()
         return 1 / (1 + np.exp(-(abilities - diffs)))
 
     def summary(self, traces, sites):
