@@ -70,9 +70,10 @@ class Dataset(BaseModel):
         for idx, subject_id in enumerate(subject_ids):
             subject_id_to_ix[subject_id] = idx
             ix_to_subject_id[idx] = subject_id
-
-        vectorizer = CountVectorizer(max_df=0.5, min_df=20, stop_words='english')
-        vectorizer.fit(item_ids)
+        
+        if amortized:
+            vectorizer = CountVectorizer(max_df=0.5, min_df=20, stop_words='english')
+            vectorizer.fit(item_ids)
 
         
         observation_subjects = []

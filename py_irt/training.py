@@ -11,6 +11,9 @@ from rich.console import Console
 from rich.live import Live
 from rich.table import Table
 
+from sklearn.feature_extraction.text import CountVectorizer
+
+
 # These imports are necessary to have @register run
 # pylint: disable=unused-import
 from py_irt.models import (
@@ -104,6 +107,7 @@ class IrtModelTrainer:
             "num_items": len(self._dataset.ix_to_item_id),
             "num_subjects": len(self._dataset.ix_to_subject_id),
         }
+        print(args)
         # TODO: Find a better solution to this
         if self._config.priors is not None:
             args["priors"] = self._config.priors
@@ -133,7 +137,7 @@ class IrtModelTrainer:
         subjects = torch.tensor(self._dataset.observation_subjects, dtype=torch.long, device=device)
         items = torch.tensor(self._dataset.observation_items, dtype=torch.long, device=device)
         responses = torch.tensor(self._dataset.observations, dtype=torch.float, device=device)
-
+        print(subjects.size(), items.size())
         # Don't take a step here, just make sure params are initialized
         # so that initializers can modify the params
         _ = self._pyro_model(subjects, items, responses)
@@ -168,7 +172,11 @@ class IrtModelTrainer:
 
     def export(self, items):
         if self.amortized:
-            results = self.irt_model.export(items)
+            vectorizer = CountVectorizer(max_df=0.5, min_df=20, stop_words='english')
+            inputs = list(self._dataset.item_ids)
+            vectorizer.fit(inputs)
+            inputs = vectorizer.transform(inputs).todense().tolist()
+            results = self.irt_model.export(inputs)
         else:
             results = self.irt_model.export()
         results["irt_model"] = self._config.model_type

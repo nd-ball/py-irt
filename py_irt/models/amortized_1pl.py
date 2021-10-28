@@ -95,7 +95,6 @@ class Amortized1PL(abstract_model.IrtModel):
     
 
     def model_irt(self, models, items, obs):
-        num_models = len(set(models))
         num_items = len(items)
         options = dict(dtype=torch.float64, device=self.device)
         #xs = torch.flatten(items, start_dim=1)
@@ -105,8 +104,8 @@ class Amortized1PL(abstract_model.IrtModel):
         obs = torch.tensor(obs, dtype=torch.float, device=items.device)
 
         with pyro.plate("thetas"):
-            ability = pyro.sample('theta', dist.Normal(torch.zeros(num_models, **options),
-                torch.ones(num_models, **options)))
+            ability = pyro.sample('theta', dist.Normal(torch.zeros(self.num_subjects, **options),
+                torch.ones(self.num_subjects, **options)))
         with pyro.plate("diffs", num_items):
             # sample the item difficulty from the prior distribution
             diff_prior_loc = torch.zeros(num_items, **options).unsqueeze(1).float()
@@ -126,7 +125,6 @@ class Amortized1PL(abstract_model.IrtModel):
             pyro.sample("obs", dist.Bernoulli(logits=ability[models] - diff).to_event(1), obs=obs)
         
     def guide_irt(self, models, items, obs):
-        num_models = len(set(models))
         num_items = len(items)
         options = dict(dtype=torch.float64, device=self.device)
         #xs = torch.flatten(items, start_dim=1)
@@ -139,8 +137,8 @@ class Amortized1PL(abstract_model.IrtModel):
 
         # register learnable params in the param store
         with pyro.plate("thetas"):
-            m_theta_param = pyro.param("loc_ability", torch.zeros(num_models, **options))
-            s_theta_param = pyro.param("scale_ability", torch.ones(num_models, **options),
+            m_theta_param = pyro.param("loc_ability", torch.zeros(self.num_subjects, **options))
+            s_theta_param = pyro.param("scale_ability", torch.ones(self.num_subjects, **options),
                             constraint=constraints.positive)
             dist_theta = dist.Normal(m_theta_param, s_theta_param)
             pyro.sample("theta", dist_theta)
@@ -194,6 +192,7 @@ class Amortized1PL(abstract_model.IrtModel):
 
     def export(self, items):
         items = torch.tensor(items, dtype=torch.float)
+        print(len(items))
         diffs, _ = self.encoder.forward(items)
         diffs = diffs.squeeze().detach().numpy()
 
