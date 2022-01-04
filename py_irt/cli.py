@@ -43,7 +43,7 @@ def train(
                 parsed_config = toml.load(f)
         else:
             parsed_config = read_json(config_path)
-    
+            
     args_config = {
         "priors": priors,
         "dims": dims,
