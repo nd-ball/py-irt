@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "py-irt"
-version = "0.3.2"
+version = "0.3.4"
 readme = "README.md"
 homepage = "https://github.com/nd-ball/py-irt/"
 description = "Bayesian IRT models in Python"
@@ -10,13 +10,14 @@ license = "MIT License"
 [tool.poetry.dependencies]
 python = ">=3.7,<3.10"
 numpy = "^1.20.3"
-pandas = "^1.2.4"
+pandas = "^1.1"
 pyro-ppl = "^1.6.0"
 rich = "^9.3.0"
 scipy = "^1.6.3"
 typer = "^0.3.2"
 pydantic = "^1.8.2"
 scikit-learn = "^0.24.2"
+toml = "^0.10.2"
 
 [tool.poetry.dev-dependencies]
 codecov = "^2.1.11"
@@ -29,6 +30,11 @@ ipython = "^7.24.1"
 
 [tool.black]
 line-length = 100
+
+[tool.isort]
+known_first_party = "py_irt"
+profile = "black"
+multi_line_output = 3
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
