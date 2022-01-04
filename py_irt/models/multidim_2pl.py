@@ -18,7 +18,8 @@ class Multidim2PL(IrtModel):
         num_subjects: int,
         dims: int = 2,
         verbose=False,
-        device: str = "cpu"
+        device: str = "cpu",
+        **kwargs
     ):
         super().__init__(
             device=device, num_items=num_items, num_subjects=num_subjects, verbose=verbose

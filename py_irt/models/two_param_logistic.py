@@ -23,7 +23,14 @@ class TwoParamLog(abstract_model.IrtModel):
     """2PL IRT model"""
 
     def __init__(
-        self, *, priors: str, num_items: int, num_subjects: int, verbose=False, device: str = "cpu"
+        self, 
+        *, 
+        priors: str, 
+        num_items: int, 
+        num_subjects: int, 
+        verbose=False, 
+        device: str = "cpu",
+        **kwargs
     ):
         super().__init__(
             num_items=num_items, num_subjects=num_subjects, device=device, verbose=verbose

@@ -76,7 +76,8 @@ class Amortized1PL(abstract_model.IrtModel):
         device: str = "cpu",
         vocab_size: int,
         dropout: float,
-        hidden: int
+        hidden: int,
+        **kwargs
     ):
         super().__init__(
             device=device, num_items=num_items, num_subjects=num_subjects, verbose=verbose
@@ -192,7 +193,6 @@ class Amortized1PL(abstract_model.IrtModel):
 
     def export(self, items):
         items = torch.tensor(items, dtype=torch.float)
-        print(len(items))
         diffs, _ = self.encoder.forward(items)
         diffs = diffs.squeeze().detach().numpy()
 
@@ -210,9 +210,7 @@ class Amortized1PL(abstract_model.IrtModel):
         )
         theta_sum = self.summary(hmc_posterior, ["theta"]).items()
         b_sum = self.summary(hmc_posterior, ["b"]).items()
-        print(theta_sum)
-        print(b_sum)
-
+        
     def predict(self, subjects, items, params_from_file=None):
         """predict p(correct | params) for a specified list of model, item pairs"""
         if params_from_file is not None:
