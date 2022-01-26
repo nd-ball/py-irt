@@ -15,7 +15,7 @@ from rich.table import Table
 
 console = Console()
 
-
+@abstract_model.IrtModel.register("3pl")
 class ThreeParamLog(abstract_model.IrtModel):
     """3PL IRT Model"""
 
