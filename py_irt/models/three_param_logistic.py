@@ -20,20 +20,21 @@ class ThreeParamLog(abstract_model.IrtModel):
     """3PL IRT Model"""
 
     # pylint: disable=not-callable
-    def __init__(self, priors, device, num_items, num_subjects, verbose=False):
-        if priors != "hierarchical":
-            raise NotImplementedError("Vague prior not implemented")
-        if device not in ["cpu", "gpu"]:
-            raise ValueError("Options for device are cpu and gpu")
-        if num_items <= 0:
-            raise ValueError("Number of items must be greater than 0")
-        if num_subjects <= 0:
-            raise ValueError("Number of subjects must be greater than 0")
+    def __init__(self, 
+        *, 
+        priors: str, 
+        num_items: int, 
+        num_subjects: int, 
+        verbose=False, 
+        device: str = "cpu",
+        **kwargs
+    ):
+        super().__init__(
+            num_items=num_items, num_subjects=num_subjects, device=device, verbose=verbose
+        )
+        if priors not in ["hierarchical"]:
+            raise ValueError("Options for priors are vague and hierarchical")
         self.priors = priors
-        self.device = device
-        self.num_items = num_items
-        self.num_subjects = num_subjects
-        self.verbose = verbose
 
     def model_hierarchical(self, models, items, obs):
         mu_b = pyro.sample(

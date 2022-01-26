@@ -15,17 +15,25 @@ class TestThreePL(unittest.TestCase):
         trainer.save("/tmp/parameters.json")
 
     def test_priors(self):
-        with self.assertRaises(NotImplementedError):
-            m = ThreeParamLog("testing", "cpu", 100, 100, False)
+        with self.assertRaises(ValueError):
+            m = ThreeParamLog(
+                priors="testing", device="cpu", num_items=100, num_subjects=100, verbose=False
+            )
 
     def test_device(self):
         with self.assertRaises(ValueError):
-            m = ThreeParamLog("hierarchical", "zpu", 100, 100, False)
+            m = ThreeParamLog(
+                priors="hierarchical", device="zpu", num_items=100, num_subjects=100, verbose=False
+            )
 
     def test_num_items(self):
         with self.assertRaises(ValueError):
-            m = ThreeParamLog("hierarchical", "cpu", -100, 100, False)
+            m = ThreeParamLog(
+                priors="hierarchical", device="cpu", num_items=-100, num_subjects=100, verbose=False
+            )
 
     def test_num_subjects(self):
         with self.assertRaises(ValueError):
-            m = ThreeParamLog("hierarchical", "cpu", 100, -100, False)
+            m = ThreeParamLog(
+                priors="hierarchical", device="cpu", num_items=100, num_subjects=-100, verbose=False
+            )
