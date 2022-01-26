@@ -32,14 +32,6 @@ training_app = typer.Typer()
 console = Console()
 
 
-IRT_MODELS = {
-    "1pl": one_param_logistic.OneParamLog,
-    "2pl": two_param_logistic.TwoParamLog,
-    "3pl": three_param_logistic.ThreeParamLog,
-    "4pl": four_param_logistic.FourParamLog,
-}
-
-
 class IrtModelTrainer:
     def __init__(
         self,
