@@ -20,6 +20,7 @@ from py_irt.models import (
     abstract_model,
     one_param_logistic,
     two_param_logistic,
+    three_param_logistic,
     four_param_logistic,
     multidim_2pl,
     amortized_1pl
