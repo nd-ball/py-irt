@@ -32,6 +32,8 @@ def train(
     device: str = "cpu",
     initializers: Optional[List[str]] = None,
     config_path: Optional[str] = None,
+    dropout: Optional[float] = 0.5,
+    hidden: Optional[int] = 100
 ):
     if config_path is None:
         parsed_config = {}
@@ -41,7 +43,7 @@ def train(
                 parsed_config = toml.load(f)
         else:
             parsed_config = read_json(config_path)
-
+            
     args_config = {
         "priors": priors,
         "dims": dims,
@@ -50,7 +52,9 @@ def train(
         "epochs": epochs,
         "initializers": initializers,
         "model_type": model_type,
-    }
+        "dropout": dropout,
+        "hidden": hidden,
+    }        
     for key, value in args_config.items():
         if value is not None:
             parsed_config[key] = value
@@ -81,17 +85,57 @@ def train_and_evaluate(
     data_path: str,
     output_dir: str,
     epochs: int = 2000,
+    priors: Optional[str] = None,
+    dims: Optional[int] = None,
     device: str = "cpu",
+    lr: Optional[float] = None,
+    lr_decay: Optional[float] = None,
     initializers: Optional[List[str]] = None,
     evaluation: str = "heldout",
     seed: int = 42,
     train_size: float = 0.9,
+    config_path: Optional[str] = None,
+    dropout: Optional[float] = 0.5,
+    hidden: Optional[int] = 100
 ):
+    if config_path is None:
+        parsed_config = {}
+    else:
+        if config_path.endswith(".toml"):
+            with open(config_path) as f:
+                parsed_config = toml.load(f)
+        else:
+            parsed_config = read_json(config_path)
+    
+    args_config = {
+        "priors": priors,
+        "dims": dims,
+        "lr": lr,
+        "lr_decay": lr_decay,
+        "epochs": epochs,
+        "initializers": initializers,
+        "model_type": model_type,
+        "dropout": dropout,
+        "hidden": hidden,
+    }        
+    for key, value in args_config.items():
+        if value is not None:
+            parsed_config[key] = value
+    if 'amortized' in model_type:
+        amortized = True
+    else:
+        amortized =  False
 
-    console.log(f"model_type: {model_type} data_path: {data_path}")
-    console.log(f"output directory: {output_dir}")
+    if model_type != parsed_config["model_type"]:
+        raise ValueError("Mismatching model types in args and config")
     start_time = time.time()
-    config = IrtConfig(model_type=model_type, epochs=epochs, initializers=initializers)
+    config = IrtConfig(**parsed_config)
+    console.log(f"config: {config}")
+
+    console.log(f"data_path: {data_path}")
+    console.log(f"output directory: {output_dir}")
+
+#    config = IrtConfig(model_type=model_type, epochs=epochs, initializers=initializers)
     if evaluation == "heldout":
         with open(data_path) as f:
             items = []
@@ -108,9 +152,9 @@ def train_and_evaluate(
             for model_id, example_id in test:
                 training_dict.setdefault(model_id, dict())
                 training_dict[model_id][example_id] = False
-        dataset = Dataset.from_jsonlines(data_path, train_items=training_dict)
+        dataset = Dataset.from_jsonlines(data_path, train_items=training_dict, amortized=amortized)
     else:
-        dataset = Dataset.from_jsonlines(data_path)
+        dataset = Dataset.from_jsonlines(data_path, amortized=amortized)
 
     # deep copy for training
     training_data = copy.deepcopy(dataset)
@@ -139,7 +183,7 @@ def train_and_evaluate(
         outputs.append(
             {
                 "subject_id": dataset.observation_subjects[i],
-                "example_id": dataset.observation_items[i],
+                #"example_id": dataset.observation_items[i],
                 "response": dataset.observations[i],
                 "prediction": preds[i],
             }

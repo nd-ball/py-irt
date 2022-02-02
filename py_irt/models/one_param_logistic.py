@@ -17,13 +17,25 @@ from functools import partial
 
 import numpy as np
 
+import torch.nn as nn
+import torch.nn.functional as F
+
 
 @abstract_model.IrtModel.register("1pl")
 class OneParamLog(abstract_model.IrtModel):
     """1PL IRT model"""
 
     def __init__(
-        self, *, priors: str, num_items: int, num_subjects: int, verbose=False, device: str = "cpu"
+            self, *,
+            priors: str,
+            num_items: int,
+            num_subjects: int,
+            verbose: bool = False,
+            device: str = "cpu",
+            vocab_size: int = None,
+            dropout: float = None,
+            hidden: int = None,
+            **kwargs
     ):
         super().__init__(
             device=device, num_items=num_items, num_subjects=num_subjects, verbose=verbose

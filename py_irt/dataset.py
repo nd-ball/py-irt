@@ -2,7 +2,7 @@ from typing import Set, Dict, List
 from pathlib import Path
 from pydantic import BaseModel
 from py_irt.io import read_jsonlines
-
+from sklearn.feature_extraction.text import CountVectorizer
 
 class ItemAccuracy(BaseModel):
     correct: int = 0
@@ -22,7 +22,7 @@ class Dataset(BaseModel):
     ix_to_subject_id: Dict[int, str]
     # observation_subjects and observation_items refers to indices
     observation_subjects: List[int]
-    observation_items: List[int]
+    observation_items: List
     # Actual response value, usually an integer
     observations: List[float]
     # should this example be included in training? 
@@ -42,7 +42,7 @@ class Dataset(BaseModel):
         return item_accuracies
 
     @classmethod
-    def from_jsonlines(cls, data_path: Path, train_items: dict = None):
+    def from_jsonlines(cls, data_path: Path, train_items: dict = None, amortized: bool = False):
         """Parse IRT dataset from jsonlines, formatted in the following way:
         * The dataset is in jsonlines format, each line representing the responses of a subject
         * Each row looks like this:
@@ -71,16 +71,25 @@ class Dataset(BaseModel):
             subject_id_to_ix[subject_id] = idx
             ix_to_subject_id[idx] = subject_id
         
+        if amortized:
+            vectorizer = CountVectorizer(max_df=0.5, min_df=20, stop_words='english')
+            vectorizer.fit(item_ids)
+
+        
         observation_subjects = []
         observation_items = []
         observations = []
         training_example = []
+        print(amortized)
         for idx, line in enumerate(input_data):
             subject_id = line["subject_id"]
             for item_id, response in line["responses"].items():
                 observations.append(response)
                 observation_subjects.append(subject_id_to_ix[subject_id])
-                observation_items.append(item_id_to_ix[item_id])
+                if not amortized:
+                    observation_items.append(item_id_to_ix[item_id])
+                else:
+                    observation_items.append(vectorizer.transform([item_id]).todense().tolist()[0])
                 if train_items is not None:
                     training_example.append(train_items[subject_id][item_id])
                 else:

@@ -20,7 +20,14 @@ class FourParamLog(abstract_model.IrtModel):
     """4PL IRT Model"""
 
     # pylint: disable=not-callable
-    def __init__(self, *, device: str, num_items: int, num_subjects: int, verbose: bool = False):
+    def __init__(
+        self, 
+        *, 
+        device: str, 
+        num_items: int, 
+        num_subjects: int, 
+        verbose: bool = False,
+        **kwargs):
         super().__init__(
             num_items=num_items, num_subjects=num_subjects, device=device, verbose=verbose
         )

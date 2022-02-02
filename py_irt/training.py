@@ -11,6 +11,9 @@ from rich.console import Console
 from rich.live import Live
 from rich.table import Table
 
+from sklearn.feature_extraction.text import CountVectorizer
+
+
 # These imports are necessary to have @register run
 # pylint: disable=unused-import
 from py_irt.models import (
@@ -20,6 +23,7 @@ from py_irt.models import (
     three_param_logistic,
     four_param_logistic,
     multidim_2pl,
+    amortized_1pl
 )
 from py_irt.io import safe_file, write_json
 from py_irt.dataset import Dataset
@@ -52,10 +56,15 @@ class IrtModelTrainer:
         self._pyro_guide = None
         self._verbose = verbose
         self.best_params = None
+        self.amortized = "amortized" in self._config.model_type
         if dataset is None:
-            self._dataset = Dataset.from_jsonlines(data_path)
+            self._dataset = Dataset.from_jsonlines(data_path, amortized=self.amortized)
         else:
             self._dataset = dataset
+
+        if self.amortized:
+            self._config.vocab_size = len(self._dataset.observation_items[0])
+        print(self._config.vocab_size)
 
         # filter out test data
         training_idx = [
@@ -99,12 +108,18 @@ class IrtModelTrainer:
             "num_items": len(self._dataset.ix_to_item_id),
             "num_subjects": len(self._dataset.ix_to_subject_id),
         }
+        print(args)
         # TODO: Find a better solution to this
         if self._config.priors is not None:
             args["priors"] = self._config.priors
+        else:
+            args["priors"] = "vague"
 
         if self._config.dims is not None:
             args["dims"] = self._config.dims
+        args["dropout"] =  self._config.dropout
+        args["hidden"] = self._config.hidden
+        args["vocab_size"] = self._config.vocab_size
 
         console.log(f"Parsed Model Args: {args}")
         self.irt_model = IrtModel.from_name(model_type)(**args)
@@ -123,13 +138,14 @@ class IrtModelTrainer:
         subjects = torch.tensor(self._dataset.observation_subjects, dtype=torch.long, device=device)
         items = torch.tensor(self._dataset.observation_items, dtype=torch.long, device=device)
         responses = torch.tensor(self._dataset.observations, dtype=torch.float, device=device)
-
+        print(subjects.size(), items.size())
         # Don't take a step here, just make sure params are initialized
         # so that initializers can modify the params
         _ = self._pyro_model(subjects, items, responses)
         _ = self._pyro_guide(subjects, items, responses)
         for init in self._initializers:
             init.initialize()
+
         table = Table()
         table.add_column("Epoch")
         table.add_column("Loss")
@@ -144,7 +160,7 @@ class IrtModelTrainer:
                 loss = svi.step(subjects, items, responses)
                 if loss < best_loss:
                     best_loss = loss
-                    self.best_params = self.export()
+                    self.best_params = self.export(items)
                 scheduler.step()
                 current_lr = current_lr * self._config.lr_decay
                 if epoch % 100 == 0:
@@ -153,13 +169,21 @@ class IrtModelTrainer:
                     )
 
             table.add_row(f"{epoch + 1}", "%.4f" % loss, "%.4f" % best_loss, "%.4f" % current_lr)
+            self.last_params = self.export(items)
 
-    def export(self):
-        results = self.irt_model.export()
+    def export(self, items):
+        if self.amortized:
+            vectorizer = CountVectorizer(max_df=0.5, min_df=20, stop_words='english')
+            inputs = list(self._dataset.item_ids)
+            vectorizer.fit(inputs)
+            inputs = vectorizer.transform(inputs).todense().tolist()
+            results = self.irt_model.export(inputs)
+        else:
+            results = self.irt_model.export()
         results["irt_model"] = self._config.model_type
         results["item_ids"] = self._dataset.ix_to_item_id
         results["subject_ids"] = self._dataset.ix_to_subject_id
         return results
 
     def save(self, output_path: Union[str, Path]):
-        write_json(safe_file(output_path), self.export())
+        write_json(safe_file(output_path), self.last_params)
