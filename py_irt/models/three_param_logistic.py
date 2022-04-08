@@ -33,7 +33,7 @@ class ThreeParamLog(abstract_model.IrtModel):
             num_items=num_items, num_subjects=num_subjects, device=device, verbose=verbose
         )
         if priors not in ["hierarchical"]:
-            raise ValueError("Options for priors are vague and hierarchical")
+            raise ValueError("Options for priors are hierarchical")
         self.priors = priors
 
     def model_hierarchical(self, models, items, obs):
