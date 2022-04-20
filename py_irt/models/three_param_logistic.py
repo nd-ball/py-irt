@@ -12,23 +12,25 @@ from pyro.optim import Adam
 from rich.console import Console
 from rich.live import Live
 from rich.table import Table
+import numpy as np
 
 console = Console()
+
 
 @abstract_model.IrtModel.register("3pl")
 class ThreeParamLog(abstract_model.IrtModel):
     """3PL IRT Model"""
 
     # pylint: disable=not-callable
-    def __init__(self, 
-        *, 
-        priors: str, 
-        num_items: int, 
-        num_subjects: int, 
-        verbose=False, 
-        device: str = "cpu",
-        **kwargs
-    ):
+    def __init__(self,
+                 *,
+                 priors: str,
+                 num_items: int,
+                 num_subjects: int,
+                 verbose=False,
+                 device: str = "cpu",
+                 **kwargs
+                 ):
         super().__init__(
             num_items=num_items, num_subjects=num_subjects, device=device, verbose=verbose
         )
@@ -90,7 +92,8 @@ class ThreeParamLog(abstract_model.IrtModel):
         )
 
         with pyro.plate("thetas", self.num_subjects, device=self.device):
-            ability = pyro.sample("theta", dist.Normal(mu_theta, 1.0 / u_theta))
+            ability = pyro.sample(
+                "theta", dist.Normal(mu_theta, 1.0 / u_theta))
 
         with pyro.plate("bs", self.num_items, device=self.device):
             diff = pyro.sample("b", dist.Normal(mu_b, 1.0 / u_b))
@@ -99,7 +102,8 @@ class ThreeParamLog(abstract_model.IrtModel):
             disc = pyro.sample("gamma", dist.Normal(mu_gamma, 1.0 / u_gamma))
 
         with pyro.plate("observe_data", obs.size(0)):
-            p_star = torch.sigmoid(disc[items] * (ability[models] - diff[items]))
+            p_star = torch.sigmoid(
+                disc[items] * (ability[models] - diff[items]))
             pyro.sample(
                 "obs",
                 dist.Bernoulli(probs=(1-lambdas[items]) * p_star),
@@ -108,19 +112,22 @@ class ThreeParamLog(abstract_model.IrtModel):
 
     def guide_hierarchical(self, models, items, obs):
 
-        loc_mu_b_param = pyro.param("loc_mu_b", torch.tensor(0.0, device=self.device))
+        loc_mu_b_param = pyro.param(
+            "loc_mu_b", torch.tensor(0.0, device=self.device))
         scale_mu_b_param = pyro.param(
             "scale_mu_b",
             torch.tensor(1.0e2, device=self.device),
             constraint=constraints.positive,
         )
-        loc_mu_gamma_param = pyro.param("loc_mu_gamma", torch.tensor(0.0, device=self.device))
+        loc_mu_gamma_param = pyro.param(
+            "loc_mu_gamma", torch.tensor(0.0, device=self.device))
         scale_mu_gamma_param = pyro.param(
             "scale_mu_gamma",
             torch.tensor(1.0e2, device=self.device),
             constraint=constraints.positive,
         )
-        loc_mu_theta_param = pyro.param("loc_mu_theta", torch.tensor(0.0, device=self.device))
+        loc_mu_theta_param = pyro.param(
+            "loc_mu_theta", torch.tensor(0.0, device=self.device))
         scale_mu_theta_param = pyro.param(
             "scale_mu_theta",
             torch.tensor(1.0e2, device=self.device),
@@ -164,13 +171,15 @@ class ThreeParamLog(abstract_model.IrtModel):
             torch.ones(self.num_subjects, device=self.device),
             constraint=constraints.positive,
         )
-        m_b_param = pyro.param("loc_diff", torch.zeros(self.num_items, device=self.device))
+        m_b_param = pyro.param("loc_diff", torch.zeros(
+            self.num_items, device=self.device))
         s_b_param = pyro.param(
             "scale_diff",
             torch.ones(self.num_items, device=self.device),
             constraint=constraints.positive,
         )
-        m_gamma_param = pyro.param("loc_disc", torch.zeros(self.num_items, device=self.device))
+        m_gamma_param = pyro.param("loc_disc", torch.zeros(
+            self.num_items, device=self.device))
         s_gamma_param = pyro.param(
             "scale_disc",
             torch.ones(self.num_items, device=self.device),
@@ -178,14 +187,19 @@ class ThreeParamLog(abstract_model.IrtModel):
         )
 
         # sample statements
-        mu_b = pyro.sample("mu_b", dist.Normal(loc_mu_b_param, scale_mu_b_param))
+        mu_b = pyro.sample("mu_b", dist.Normal(
+            loc_mu_b_param, scale_mu_b_param))
         u_b = pyro.sample("u_b", dist.Gamma(alpha_b_param, beta_b_param))
 
-        mu_gamma = pyro.sample("mu_gamma", dist.Normal(loc_mu_gamma_param, scale_mu_gamma_param))
-        u_gamma = pyro.sample("u_gamma", dist.Gamma(alpha_gamma_param, beta_gamma_param))
+        mu_gamma = pyro.sample("mu_gamma", dist.Normal(
+            loc_mu_gamma_param, scale_mu_gamma_param))
+        u_gamma = pyro.sample("u_gamma", dist.Gamma(
+            alpha_gamma_param, beta_gamma_param))
 
-        mu_theta = pyro.sample("mu_theta", dist.Normal(loc_mu_theta_param, scale_mu_theta_param))
-        u_theta = pyro.sample("u_theta", dist.Gamma(alpha_theta_param, beta_theta_param))
+        mu_theta = pyro.sample("mu_theta", dist.Normal(
+            loc_mu_theta_param, scale_mu_theta_param))
+        u_theta = pyro.sample("u_theta", dist.Gamma(
+            alpha_theta_param, beta_theta_param))
 
         with pyro.plate("thetas", self.num_subjects, device=self.device):
             pyro.sample("theta", dist.Normal(m_theta_param, s_theta_param))
@@ -204,6 +218,19 @@ class ThreeParamLog(abstract_model.IrtModel):
             "lambdas": pyro.param("lambdas").data.tolist(),
         }
 
+    def predict(self, subjects, items, params_from_file=None):
+        """predict p(correct | params) for a specified list of model, item pairs"""
+        if params_from_file is not None:
+            model_params = params_from_file
+        else:
+            model_params = self.export()
+        abilities = np.array([model_params["ability"][i] for i in subjects])
+        diffs = np.array([model_params["diff"][i] for i in items])
+        discs = np.array([model_params["disc"][i] for i in items])
+        lambdas = np.array([model_params["lambdas"][i] for i in items])
+
+        return lambdas + (1 - lambdas / (1 + np.exp(-discs * (abilities - diffs))))
+
     def get_guide(self):
         return self.guide_hierarchical
 
@@ -212,14 +239,16 @@ class ThreeParamLog(abstract_model.IrtModel):
 
     def summary(self, traces, sites):
         marginal = (
-            EmpiricalMarginal(traces, sites)._get_samples_and_weights()[0].detach().cpu().numpy()
+            EmpiricalMarginal(traces, sites)._get_samples_and_weights()[
+                0].detach().cpu().numpy()
         )
         print(marginal)
         site_stats = {}
         for i in range(marginal.shape[1]):
             site_name = sites[i]
             marginal_site = pd.DataFrame(marginal[:, i]).transpose()
-            describe = partial(pd.Series.describe, percentiles=[0.05, 0.25, 0.5, 0.75, 0.95])
+            describe = partial(pd.Series.describe, percentiles=[
+                               0.05, 0.25, 0.5, 0.75, 0.95])
             site_stats[site_name] = marginal_site.apply(describe, axis=1)[
                 ["mean", "std", "5%", "25%", "50%", "75%", "95%"]
             ]
