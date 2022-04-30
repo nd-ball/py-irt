@@ -44,12 +44,6 @@ def train(
         else:
             parsed_config = read_json(config_path)
 
-    # only available priors are hierarchical for 3pl model
-    if model_type == '3pl':
-        priors = 'hierarchical'
-    else:
-        priors
-
     args_config = {
         "priors": priors,
         "dims": dims,
@@ -112,12 +106,6 @@ def train_and_evaluate(
                 parsed_config = toml.load(f)
         else:
             parsed_config = read_json(config_path)
-
-    # only available priors are hierarchical for 3pl model
-    if model_type == '3pl':
-        priors = 'hierarchical'
-    else:
-        priors
 
     args_config = {
         "priors": priors,
