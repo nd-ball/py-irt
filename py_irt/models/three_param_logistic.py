@@ -24,7 +24,6 @@ class ThreeParamLog(abstract_model.IrtModel):
     # pylint: disable=not-callable
     def __init__(self,
                  *,
-                 priors: str,
                  num_items: int,
                  num_subjects: int,
                  verbose=False,
@@ -34,9 +33,6 @@ class ThreeParamLog(abstract_model.IrtModel):
         super().__init__(
             num_items=num_items, num_subjects=num_subjects, device=device, verbose=verbose
         )
-        if priors not in ["hierarchical"]:
-            raise ValueError("Options for priors are hierarchical")
-        self.priors = priors
 
     def model_hierarchical(self, models, items, obs):
         mu_b = pyro.sample(

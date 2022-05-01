@@ -43,7 +43,7 @@ def train(
                 parsed_config = toml.load(f)
         else:
             parsed_config = read_json(config_path)
-            
+
     args_config = {
         "priors": priors,
         "dims": dims,
@@ -54,7 +54,7 @@ def train(
         "model_type": model_type,
         "dropout": dropout,
         "hidden": hidden,
-    }        
+    }
     for key, value in args_config.items():
         if value is not None:
             parsed_config[key] = value
@@ -106,7 +106,7 @@ def train_and_evaluate(
                 parsed_config = toml.load(f)
         else:
             parsed_config = read_json(config_path)
-    
+
     args_config = {
         "priors": priors,
         "dims": dims,
@@ -117,14 +117,14 @@ def train_and_evaluate(
         "model_type": model_type,
         "dropout": dropout,
         "hidden": hidden,
-    }        
+    }
     for key, value in args_config.items():
         if value is not None:
             parsed_config[key] = value
     if 'amortized' in model_type:
         amortized = True
     else:
-        amortized =  False
+        amortized = False
 
     if model_type != parsed_config["model_type"]:
         raise ValueError("Mismatching model types in args and config")
@@ -144,7 +144,8 @@ def train_and_evaluate(
                 model_id = submission["subject_id"]
                 for example_id in submission["responses"].keys():
                     items.append((model_id, example_id))
-            train, test = train_test_split(items, train_size=train_size, random_state=seed)
+            train, test = train_test_split(
+                items, train_size=train_size, random_state=seed)
             training_dict = {}
             for model_id, example_id in train:
                 training_dict.setdefault(model_id, dict())
@@ -152,13 +153,15 @@ def train_and_evaluate(
             for model_id, example_id in test:
                 training_dict.setdefault(model_id, dict())
                 training_dict[model_id][example_id] = False
-        dataset = Dataset.from_jsonlines(data_path, train_items=training_dict, amortized=amortized)
+        dataset = Dataset.from_jsonlines(
+            data_path, train_items=training_dict, amortized=amortized)
     else:
         dataset = Dataset.from_jsonlines(data_path, amortized=amortized)
 
     # deep copy for training
     training_data = copy.deepcopy(dataset)
-    trainer = IrtModelTrainer(config=config, dataset=training_data, data_path=data_path)
+    trainer = IrtModelTrainer(
+        config=config, dataset=training_data, data_path=data_path)
     output_dir = Path(output_dir)
     console.log("Training Model...")
     trainer.train(device=device)
@@ -172,18 +175,22 @@ def train_and_evaluate(
         i for i in range(len(dataset.training_example)) if not dataset.training_example[i]
     ]
     if len(testing_idx) > 0:
-        dataset.observation_subjects = [dataset.observation_subjects[i] for i in testing_idx]
-        dataset.observation_items = [dataset.observation_items[i] for i in testing_idx]
+        dataset.observation_subjects = [
+            dataset.observation_subjects[i] for i in testing_idx]
+        dataset.observation_items = [
+            dataset.observation_items[i] for i in testing_idx]
         dataset.observations = [dataset.observations[i] for i in testing_idx]
-        dataset.training_example = [dataset.training_example[i] for i in testing_idx]
+        dataset.training_example = [
+            dataset.training_example[i] for i in testing_idx]
 
-    preds = trainer.irt_model.predict(dataset.observation_subjects, dataset.observation_items)
+    preds = trainer.irt_model.predict(
+        dataset.observation_subjects, dataset.observation_items)
     outputs = []
     for i in range(len(preds)):
         outputs.append(
             {
                 "subject_id": dataset.observation_subjects[i],
-                #"example_id": dataset.observation_items[i],
+                # "example_id": dataset.observation_items[i],
                 "response": dataset.observations[i],
                 "prediction": preds[i],
             }
@@ -220,7 +227,8 @@ def evaluate(
     subject_item_pairs = read_jsonlines(test_pairs_path)
 
     # calculate predictions and write them to disk
-    config = IrtConfig(model_type=model_type, epochs=epochs, initializers=initializers)
+    config = IrtConfig(model_type=model_type, epochs=epochs,
+                       initializers=initializers)
     irt_model = IrtModel.from_name(model_type)(
         priors=config.priors,
         device=device,
@@ -228,9 +236,11 @@ def evaluate(
         num_subjects=len(irt_params["subject_ids"]),
     )
 
-    observation_subjects = [entry["subject_id"] for entry in subject_item_pairs]
+    observation_subjects = [entry["subject_id"]
+                            for entry in subject_item_pairs]
     observation_items = [entry["item_id"] for entry in subject_item_pairs]
-    preds = irt_model.predict(observation_subjects, observation_items, irt_params)
+    preds = irt_model.predict(observation_subjects,
+                              observation_items, irt_params)
     outputs = []
     for i in range(len(preds)):
         outputs.append(
