@@ -84,7 +84,7 @@ Where `test_pairs.jsonlines` is a jsonlines file with the following format:
 
 If you would like to both train and evaluate a model you can use the following command:
 
-`py-irt train_and_evaluate 4pl ~/path/to/data/squad.jsonlines /path/to/output/eg/test-4pl/`
+`py-irt train-and-evaluate 4pl ~/path/to/data/squad.jsonlines /path/to/output/eg/test-4pl/`
 
 By default this will train a model with 90% of the provided data and evaluate with the remaining 10%.
 To change this behavior you can add `--evaluation all` to the command above. 
