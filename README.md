@@ -33,10 +33,12 @@ pip install py-irt
 
 OR
 
+Install [Poetry](https://python-poetry.org/docs/#installation)
+
 ```shell
 git clone https://github.com/nd-ball/py-irt.git
 cd py-irt
-pip install -r requirements.txt
+poetry install
 ```
 
 ## Usage

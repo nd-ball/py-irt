@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "py-irt"
-version = "0.4.4"
+version = "0.4.5"
 readme = "README.md"
 homepage = "https://github.com/nd-ball/py-irt/"
 description = "Bayesian IRT models in Python"
@@ -8,8 +8,8 @@ authors = ["John P. Lalor <john.lalor@nd.edu>"]
 license = "MIT License"
 
 [tool.poetry.dependencies]
-python = ">=3.7,<3.10"
-numpy = "^1.20.3"
+python = ">=3.8,<3.10"
+numpy = ">=1.22.0"
 pandas = "^1.1"
 pyro-ppl = "^1.6.0"
 rich = "^9.3.0"
