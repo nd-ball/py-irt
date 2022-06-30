@@ -5,18 +5,15 @@ language: python
 
 # python versions to build against
 python:
-  - "3.6"      # current default Python on Travis CI
-  - "3.7"
   - "3.8"
   - "3.9"
   - "3.9-dev"  # 3.9 development branch
   
 # command to install dependencies
+before_install:
+- pip install poetry
 install:
-  - pip install -r requirements.txt
-  - pip install py-irt
-  - pip install codecov
-  - pip install pytest-cov
+- poetry install
   
 # command to run tests
 script:
