@@ -125,7 +125,7 @@ class ThreeParamLog(abstract_model.IrtModel):
                 disc[items] * (ability[models] - diff[items]))
             pyro.sample(
                 "obs",
-                dist.Bernoulli(probs=(1-lambdas[items]) * p_star),
+                dist.Bernoulli(probs=lambdas[items]+(1-lambdas[items]) * p_star),
                 obs=obs,
             )
 
