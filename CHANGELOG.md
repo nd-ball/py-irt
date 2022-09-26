@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+
+## [0.4.6] - 2022-09-26
+
+- Fix bug in 3PL model
+
 ## [0.4.0] - 2022-02-02
 
 - Implement 3PL and amortized 1PL models
