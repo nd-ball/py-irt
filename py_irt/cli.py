@@ -21,12 +21,16 @@
 # SOFTWARE.
 
 
+import random
 from typing import Optional, List
 import time
 import json
 import copy
 from pathlib import Path
 
+import torch
+import pyro
+import numpy as np
 import typer
 import toml
 from rich.console import Console
@@ -56,7 +60,10 @@ def train(
     initializers: Optional[List[str]] = None,
     config_path: Optional[str] = None,
     dropout: Optional[float] = 0.5,
-    hidden: Optional[int] = 100
+    hidden: Optional[int] = 100,
+    seed: Optional[int] = None,
+    deterministic: bool = False,
+    log_every: int = 100,
 ):
     if config_path is None:
         parsed_config = {}
@@ -77,10 +84,23 @@ def train(
         "model_type": model_type,
         "dropout": dropout,
         "hidden": hidden,
+        "log_every": log_every,
+        "deterministic": deterministic,
+        "seed": seed,
     }
     for key, value in args_config.items():
         if value is not None:
             parsed_config[key] = value
+
+    if seed is not None:
+        random.seed(seed)
+        np.random.seed(seed)
+        torch.manual_seed(seed)
+        pyro.set_rng_seed(seed)
+    if deterministic:
+        torch.backends.cudnn.deterministic = True
+        torch.backends.cudnn.benchmark = True
+        torch.use_deterministic_algorithms(True)
 
     if model_type != parsed_config["model_type"]:
         raise ValueError("Mismatching model types in args and config")

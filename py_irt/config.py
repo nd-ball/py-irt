@@ -40,3 +40,6 @@ class IrtConfig(BaseModel):
     dropout: float = 0.5
     hidden: int = 100
     vocab_size: Optional[int] = None
+    log_every: int = 100
+    seed: Optional[int] = None
+    deterministic: bool = False

@@ -86,7 +86,7 @@ class IrtModelTrainer:
 
         if self.amortized:
             self._config.vocab_size = len(self._dataset.observation_items[0])
-        print(self._config.vocab_size)
+        console.log(f'Vocab size: {self._config.vocab_size}')
 
         # filter out test data
         training_idx = [
@@ -130,7 +130,7 @@ class IrtModelTrainer:
             "num_items": len(self._dataset.ix_to_item_id),
             "num_subjects": len(self._dataset.ix_to_subject_id),
         }
-        print(args)
+        console.log(f'args: {args}')
         # TODO: Find a better solution to this
         if self._config.priors is not None:
             args["priors"] = self._config.priors
@@ -185,7 +185,7 @@ class IrtModelTrainer:
                     self.best_params = self.export(items)
                 scheduler.step()
                 current_lr = current_lr * self._config.lr_decay
-                if epoch % 100 == 0:
+                if epoch % self._config.log_every == 0:
                     table.add_row(
                         f"{epoch + 1}", "%.4f" % loss, "%.4f" % best_loss, "%.4f" % current_lr
                     )
