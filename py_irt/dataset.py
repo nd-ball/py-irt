@@ -20,11 +20,15 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-from typing import Set, Dict, List
+from typing import Set, Dict, List, Union
 from pathlib import Path
 from pydantic import BaseModel
 from py_irt.io import read_jsonlines
 from sklearn.feature_extraction.text import CountVectorizer
+from ordered_set import OrderedSet
+from rich.console import Console
+
+console = Console()
 
 class ItemAccuracy(BaseModel):
     correct: int = 0
@@ -36,8 +40,8 @@ class ItemAccuracy(BaseModel):
 
 
 class Dataset(BaseModel):
-    item_ids: Set[str]
-    subject_ids: Set[str]
+    item_ids: Union[Set[str], OrderedSet]
+    subject_ids: Union[Set[str], OrderedSet]
     item_id_to_ix: Dict[str, int]
     ix_to_item_id: Dict[int, str]
     subject_id_to_ix: Dict[str, int]
@@ -49,6 +53,9 @@ class Dataset(BaseModel):
     observations: List[float]
     # should this example be included in training? 
     training_example: List[bool]
+
+    class Config:
+        arbitrary_types_allowed = True
 
     def get_item_accuracies(self) -> Dict[str, ItemAccuracy]:
         item_accuracies = {}
@@ -71,8 +78,8 @@ class Dataset(BaseModel):
         {"subject_id": "<subject_id>", "responses": {"<item_id>": <response>}}
         * Where <subject_id> is a string, <item_id> is a string, and <response> is a number (usually integer)
         """
-        item_ids = set()
-        subject_ids = set()
+        item_ids = OrderedSet()
+        subject_ids = OrderedSet()
         item_id_to_ix = {}
         ix_to_item_id = {}
         subject_id_to_ix = {}
@@ -102,7 +109,7 @@ class Dataset(BaseModel):
         observation_items = []
         observations = []
         training_example = []
-        print(amortized)
+        console.log(f'amortized: {amortized}')
         for idx, line in enumerate(input_data):
             subject_id = line["subject_id"]
             for item_id, response in line["responses"].items():
