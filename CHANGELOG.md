@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.4.8] - 2023-01-18
+
+- Implement ordered sets to control subject and item creation
+- Implement CLI argument to set a random seed
 
 ## [0.4.6] - 2022-09-26
 
