@@ -28,6 +28,7 @@ import torch
 
 from pyro.infer import SVI, Trace_ELBO
 import pyro
+#from pyro.optim import ExponentialLR
 
 from rich.console import Console
 from rich.live import Live
