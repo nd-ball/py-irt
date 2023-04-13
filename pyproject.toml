@@ -21,7 +21,7 @@ toml = "^0.10.2"
 ordered-set = "^4.1.0"
 torch = "<2.0.0"
 [tool.poetry.dev-dependencies]
-codecov = "^2.1.11"
+#codecov = "^2.1.11"
 pytest = "^6.2.4"
 pytest-cov = "^2.12.1"
 pylint = "^2.8.3"
