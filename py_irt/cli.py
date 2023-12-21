@@ -266,22 +266,33 @@ def evaluate(
     # load saved params
     irt_params = read_json(parameter_path)
 
+    # reverse dict for lookup
+    subjectIDX = {}
+    for (key, item) in irt_params["subject_ids"].items():
+        subjectIDX[item] = int(key)
+
+    itemIDX = {}
+    for (key, item) in irt_params["item_ids"].items():
+        itemIDX[item] = int(key)
+
     # load subject, item pairs we want to test
     subject_item_pairs = read_jsonlines(test_pairs_path)
 
     # calculate predictions and write them to disk
     config = IrtConfig(model_type=model_type, epochs=epochs,
                        initializers=initializers)
+    
+    observation_subjects = [subjectIDX[entry["subject_id"]]
+                            for entry in subject_item_pairs]
+    observation_items = [itemIDX[entry["item_id"]] for entry in subject_item_pairs]
+
     irt_model = IrtModel.from_name(model_type)(
-        priors=config.priors,
+        priors="vague",
         device=device,
-        num_items=len(irt_params["item_ids"]),
-        num_subjects=len(irt_params["subject_ids"]),
+        num_items=len(set(observation_items)),
+        num_subjects=len(set(observation_subjects)),
     )
 
-    observation_subjects = [entry["subject_id"]
-                            for entry in subject_item_pairs]
-    observation_items = [entry["item_id"] for entry in subject_item_pairs]
     preds = irt_model.predict(observation_subjects,
                               observation_items, irt_params)
     outputs = []
