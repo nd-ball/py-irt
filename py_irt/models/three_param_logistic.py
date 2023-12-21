@@ -248,7 +248,7 @@ class ThreeParamLog(abstract_model.IrtModel):
         discs = np.array([model_params["disc"][i] for i in items])
         lambdas = np.array([model_params["lambdas"][i] for i in items])
 
-        return lambdas + (1 - lambdas / (1 + np.exp(-discs * (abilities - diffs))))
+        return lambdas + ((1 - lambdas) / (1 + np.exp(-discs * (abilities - diffs))))
 
     def get_guide(self):
         return self.guide_hierarchical
