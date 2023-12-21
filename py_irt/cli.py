@@ -233,7 +233,7 @@ def train_and_evaluate(
         outputs.append(
             {
                 "subject_id": dataset.observation_subjects[i],
-                # "example_id": dataset.observation_items[i],
+                "example_id": dataset.observation_items[i],
                 "response": dataset.observations[i],
                 "prediction": preds[i],
             }
