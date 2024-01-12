@@ -22,7 +22,7 @@
 
 
 from typing import List, Dict, Union, Optional
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 # This registers all models with the registry
 # pylint: disable=unused-import
@@ -43,3 +43,4 @@ class IrtConfig(BaseModel):
     log_every: int = 100
     seed: Optional[int] = None
     deterministic: bool = False
+    model_config = ConfigDict(protected_namespaces=())
