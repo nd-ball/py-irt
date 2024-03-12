@@ -28,7 +28,6 @@ import torch
 
 from pyro.infer import SVI, Trace_ELBO
 import pyro
-#from pyro.optim import ExponentialLR
 
 from rich.console import Console
 from rich.live import Live
@@ -46,7 +45,7 @@ from py_irt.models import (
     three_param_logistic,
     four_param_logistic,
     multidim_2pl,
-    amortized_1pl
+    amortized_1pl,
 )
 from py_irt.io import safe_file, write_json
 from py_irt.dataset import Dataset
@@ -70,7 +69,11 @@ class IrtModelTrainer:
     ) -> None:
         self._data_path = data_path
         self._config = config
-        IrtModel.validate_name(config.model_type)
+        if isinstance(config.model_type, str):
+            IrtModel.validate_name(config.model_type)
+            self.amortized = "amortized" in self._config.model_type
+        else:
+            self.amortized = False
         self._priors = None
         self._device = None
         self._epochs = None
@@ -79,7 +82,6 @@ class IrtModelTrainer:
         self._pyro_guide = None
         self._verbose = verbose
         self.best_params = None
-        self.amortized = "amortized" in self._config.model_type
         if dataset is None:
             self._dataset = Dataset.from_jsonlines(data_path, amortized=self.amortized)
         else:
@@ -87,7 +89,7 @@ class IrtModelTrainer:
 
         if self.amortized:
             self._config.vocab_size = len(self._dataset.observation_items[0])
-        console.log(f'Vocab size: {self._config.vocab_size}')
+        console.log(f"Vocab size: {self._config.vocab_size}")
 
         # filter out test data
         training_idx = [
@@ -98,9 +100,15 @@ class IrtModelTrainer:
         self._dataset.observation_subjects = [
             self._dataset.observation_subjects[i] for i in training_idx
         ]
-        self._dataset.observation_items = [self._dataset.observation_items[i] for i in training_idx]
-        self._dataset.observations = [self._dataset.observations[i] for i in training_idx]
-        self._dataset.training_example = [self._dataset.training_example[i] for i in training_idx]
+        self._dataset.observation_items = [
+            self._dataset.observation_items[i] for i in training_idx
+        ]
+        self._dataset.observations = [
+            self._dataset.observations[i] for i in training_idx
+        ]
+        self._dataset.training_example = [
+            self._dataset.training_example[i] for i in training_idx
+        ]
 
         if config.initializers is None:
             initializers = []
@@ -131,7 +139,7 @@ class IrtModelTrainer:
             "num_items": len(self._dataset.ix_to_item_id),
             "num_subjects": len(self._dataset.ix_to_subject_id),
         }
-        console.log(f'args: {args}')
+        console.log(f"args: {args}")
         # TODO: Find a better solution to this
         if self._config.priors is not None:
             args["priors"] = self._config.priors
@@ -140,12 +148,16 @@ class IrtModelTrainer:
 
         if self._config.dims is not None:
             args["dims"] = self._config.dims
-        args["dropout"] =  self._config.dropout
+        args["dropout"] = self._config.dropout
         args["hidden"] = self._config.hidden
         args["vocab_size"] = self._config.vocab_size
 
         console.log(f"Parsed Model Args: {args}")
-        self.irt_model = IrtModel.from_name(model_type)(**args)
+        if isinstance(model_type, str):
+            self.irt_model = IrtModel.from_name(model_type)(**args)
+        else:
+            self.irt_model = model_type(**args)
+            assert isinstance(self.irt_model, IrtModel)
         pyro.clear_param_store()
         self._pyro_model = self.irt_model.get_model()
         self._pyro_guide = self.irt_model.get_guide()
@@ -158,9 +170,15 @@ class IrtModelTrainer:
             }
         )
         svi = SVI(self._pyro_model, self._pyro_guide, scheduler, loss=Trace_ELBO())
-        subjects = torch.tensor(self._dataset.observation_subjects, dtype=torch.long, device=device)
-        items = torch.tensor(self._dataset.observation_items, dtype=torch.long, device=device)
-        responses = torch.tensor(self._dataset.observations, dtype=torch.float, device=device)
+        subjects = torch.tensor(
+            self._dataset.observation_subjects, dtype=torch.long, device=device
+        )
+        items = torch.tensor(
+            self._dataset.observation_items, dtype=torch.long, device=device
+        )
+        responses = torch.tensor(
+            self._dataset.observations, dtype=torch.float, device=device
+        )
         print(subjects.size(), items.size())
         # Don't take a step here, just make sure params are initialized
         # so that initializers can modify the params
@@ -188,15 +206,20 @@ class IrtModelTrainer:
                 current_lr = current_lr * self._config.lr_decay
                 if epoch % self._config.log_every == 0:
                     table.add_row(
-                        f"{epoch + 1}", "%.4f" % loss, "%.4f" % best_loss, "%.4f" % current_lr
+                        f"{epoch + 1}",
+                        "%.4f" % loss,
+                        "%.4f" % best_loss,
+                        "%.4f" % current_lr,
                     )
 
-            table.add_row(f"{epoch + 1}", "%.4f" % loss, "%.4f" % best_loss, "%.4f" % current_lr)
+            table.add_row(
+                f"{epoch + 1}", "%.4f" % loss, "%.4f" % best_loss, "%.4f" % current_lr
+            )
             self.last_params = self.export(items)
 
     def export(self, items):
         if self.amortized:
-            vectorizer = CountVectorizer(max_df=0.5, min_df=20, stop_words='english')
+            vectorizer = CountVectorizer(max_df=0.5, min_df=20, stop_words="english")
             inputs = list(self._dataset.item_ids)
             vectorizer.fit(inputs)
             inputs = vectorizer.transform(inputs).todense().tolist()
@@ -210,3 +233,4 @@ class IrtModelTrainer:
 
     def save(self, output_path: Union[str, Path]):
         write_json(safe_file(output_path), self.last_params)
+                                       
