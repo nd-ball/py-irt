@@ -233,4 +233,3 @@ class IrtModelTrainer:
 
     def save(self, output_path: Union[str, Path]):
         write_json(safe_file(output_path), self.last_params)
-                                       
