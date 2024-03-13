@@ -21,7 +21,7 @@
 # SOFTWARE.
 
 
-from typing import List, Dict, Union, Optional
+from typing import List, Dict, Union, Optional, Callable
 from pydantic import BaseModel, ConfigDict
 
 # This registers all models with the registry
@@ -30,7 +30,7 @@ from py_irt.models import *
 
 
 class IrtConfig(BaseModel):
-    model_type: str
+    model_type: Union[str, Callable]
     epochs: int = 2000
     priors: Optional[str] = None
     initializers: Optional[List[Union[str, Dict]]] = None
