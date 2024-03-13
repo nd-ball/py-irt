@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.6.0] - 2024-03-13
+
+- Add graphviz for model viz
+- Update to torch 2
+- Make model more configurable
+- Add a model for the tutorial
+
 ## [0.5.0] - 2024-01-05
 
 - Update most dependencies with major version updates to pandas (1->2), pydantic (1->2)
