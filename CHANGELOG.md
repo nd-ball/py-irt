@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.6.2] - 2024-04-11
+
+- Merge GH-65 to load dataset from pandas (GH-64)
+
 ## [0.6.1] - 2024-03-26
 
 - Bump black from 23.12.1 to 24.3.0
