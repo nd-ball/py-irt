@@ -24,7 +24,6 @@
 import abc
 from typing import Dict, Any
 
-
 _IRT_REGISTRY = {}
 
 
@@ -77,3 +76,21 @@ class IrtModel(abc.ABC):
     @abc.abstractmethod
     def export(self) -> Dict[str, Any]:
         pass
+
+    @classmethod
+    def train(cls, dataset, **kw):
+        # import here to avoid circular import
+        from py_irt.config import IrtConfig
+        from py_irt.training import IrtModelTrainer
+
+        inv_irt_registry = {v: k for k, v in _IRT_REGISTRY.items()}
+        try:
+            my_name = inv_irt_registry[cls]
+        except KeyError:
+            raise KeyError("model not found in registry")
+
+        config = IrtConfig(model_type=my_name, **kw)
+        trainer = IrtModelTrainer(dataset=dataset, data_path=None, config=config)
+        trainer.train()
+        
+        return trainer

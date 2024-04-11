@@ -27,6 +27,7 @@ from py_irt.io import read_jsonlines
 from sklearn.feature_extraction.text import CountVectorizer
 from ordered_set import OrderedSet
 from rich.console import Console
+import pandas as pd
 
 console = Console()
 
@@ -42,15 +43,18 @@ class ItemAccuracy(BaseModel):
 class Dataset(BaseModel):
     item_ids: Union[Set[str], OrderedSet]
     subject_ids: Union[Set[str], OrderedSet]
-    item_id_to_ix: Dict[str, int]
+    item_id_to_ix: Dict[str, int] # encoding values for each item
     ix_to_item_id: Dict[int, str]
-    subject_id_to_ix: Dict[str, int]
+    subject_id_to_ix: Dict[str, int] # encoding values for each subject
     ix_to_subject_id: Dict[int, str]
+
     # observation_subjects and observation_items refers to indices
-    observation_subjects: List[int]
-    observation_items: List
+    observation_subjects: List[int] # subjects encoded as integers
+    observation_items: List # items encoded as integers
+
     # Actual response value, usually an integer
     observations: List[float]
+
     # should this example be included in training? 
     training_example: List[bool]
 
@@ -136,3 +140,128 @@ class Dataset(BaseModel):
             observations=observations,
             training_example=training_example,
         )
+
+    @classmethod
+    def from_pandas(cls, df, subject_column=None, item_columns=None):
+        """Build a Dataset object from a pandas DataFrame
+
+        Rows represent subjects. Columns represent items. Values represent responses. Nan values are treated as missing data.
+
+        E.g.
+        ```python
+        df = pd.DataFrame({
+            'subject_id': ["joe", "sarah", "juan", "julia"],
+            'item_1': [0, 1, 1, 1],
+            'item_2': [0, 1, 0, 1],
+            'item_3': [1, 0, 1, 0],
+        })
+        subject_column = 'user_id'
+        item_columns = ['item_1', 'item_2', 'item_3']
+        ```
+
+        Args:
+            df (pd.DataFrame): A DataFrame containing the data
+            subject_column (str, optional): The name of the column containing the subject ids, defaults to using the index
+            item_columns (list of str, optional): The names of the columns containing the item ids, defaults to every column
+        Returns:
+            Dataset: The dataset object
+        """
+        if subject_column is not None:
+            if item_columns is not None and subject_column in item_columns:
+                raise ValueError("subject_column cannot be in item_columns")
+            if not isinstance(subject_column, str):
+                raise ValueError("subject_column must be a string if provided")
+        if item_columns is not None:
+            if isinstance(item_columns, str):
+                raise ValueError("item_columns must be an iterable of strings if provided")
+            try:
+                item_columns = list(item_columns)
+            except TypeError:
+                raise ValueError("item_columns must be an iterable of strings if provided")
+        
+        # default value for subject columns is the index
+        if subject_column is None:
+            subject_column = "subject_name"
+            i = 0
+            while subject_column in df.columns:
+                subject_column = f"subject_name: {i}"
+                i += 1
+            
+            df[subject_column] = df.index.astype(str)
+
+        if df[subject_column].isna().any():
+            raise ValueError("subject column cannot contain nan")
+        if df[subject_column].unique().size < df[subject_column].values.size:
+            raise ValueError("subject column cannot contain duplicates")
+        if df[subject_column].values.dtype != str:
+            df[subject_column] = df[subject_column].astype(str)
+        
+        # default value for item columns is all columns except the subject column
+        if item_columns is None:
+            item_columns = [c for c in df.columns if c != subject_column]
+        df[item_columns] = df[item_columns].astype(float)
+
+        melted = pd.melt(
+            df[[subject_column] + item_columns],
+            id_vars=[subject_column],
+            value_vars=item_columns,
+            var_name="item_name",
+            value_name="outcome"
+            ).rename(columns={subject_column: "subject_name"})
+        
+        # na values code for unkown data that should not be included in training
+        melted = melted.dropna(axis=0)
+
+        item_ids = pd.DataFrame({
+            "item_name": item_columns,
+            "item_id": range(len(item_columns))
+        })
+        subject_ids = pd.DataFrame({
+            "subject_name": df[subject_column].unique(),
+            "subject_id": range(len(df[subject_column].unique()))
+        })
+        merged = pd.merge(
+            pd.merge(melted, item_ids, how="left", on="item_name"),
+            subject_ids, how="left", on="subject_name"
+            )
+
+        return cls(
+            item_ids = OrderedSet([str(x) for x in merged.item_name.values]),
+            subject_ids = OrderedSet([str(x) for x in merged.subject_name.values]),
+            observation_subjects = list(merged.subject_id.values),
+            observation_items = list(merged.item_id.values),
+            observations = list(merged.outcome.values),
+            training_example = [True for _ in range(merged.shape[0])],
+            item_id_to_ix = dict(zip(item_ids.item_name, item_ids.item_id)),
+            ix_to_item_id = dict(zip(item_ids.item_id, item_ids.item_name)),
+            subject_id_to_ix = dict(zip(subject_ids.subject_name, subject_ids.subject_id)),
+            ix_to_subject_id = dict(zip(subject_ids.subject_id, subject_ids.subject_name))
+        )
+    
+    def to_pandas(self, wide=True):
+        """Convert the dataset to a pandas DataFrame
+
+        If returned in long format, the columns will be "subject", "item", "subject_ix", "item_ix", "response".
+        If returned in wide format, the columns will be "subject" and the names of the items.
+
+        Args:
+            wide (bool, optional): Whether to return the dataset in wide format (default) or long format. Defaults to True.
+
+        Returns:
+            pd.DataFrame: The dataset as a DataFrame
+        """
+        subject_list = list(zip(*[[k, v] for k, v in self.ix_to_subject_id.items()]))
+        item_list = list(zip(*[[k, v] for k, v in self.ix_to_item_id.items()]))
+        subjects = pd.DataFrame({"subject": subject_list[1]}, index=subject_list[0])
+        items = pd.DataFrame({"item": item_list[1]}, index=item_list[0])
+
+        long = pd.DataFrame({
+            "subject_ix": self.observation_subjects,
+            "item_ix": self.observation_items,
+            "response": self.observations
+        }).join(subjects, on="subject_ix").join(items, on="item_ix")
+        long = long[["subject", "subject_ix", "item", "item_ix", "response"]]
+
+        if not wide:
+            return long
+        return subjects.join(long.pivot(index="subject_ix", columns="item", values="response"))
