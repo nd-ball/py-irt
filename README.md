@@ -47,6 +47,8 @@ Once you install from PyPI, you can use the following command to fit an IRT
 model on the scored predictions of a dataset. For example, if you were to run py-irt with the 4PL model on the scored predictions of different transformer models on the SQuAD dataset, you'd do this:
 `py-irt train 4pl ~/path/to/dataset/eg/squad.jsonlines /path/to/output/eg/test-4pl/`
 
+Please see the [EACL 2024 IRT4NLP tutorial](https://eacl2024irt.github.io/notebooks/2_IntroToIRT_jupyter.html) which showcases py-irt usage from within Python and not from CLI.
+
 ## FAQ
 
 1. What kind of output should I expect on running the command to train an IRT model?
