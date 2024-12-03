@@ -150,7 +150,7 @@ class Dataset(BaseModel):
         E.g.
         ```python
         df = pd.DataFrame({
-            'subject_id': ["joe", "sarah", "juan", "julia"],
+            'user_id': ["joe", "sarah", "juan", "julia"],
             'item_1': [0, 1, 1, 1],
             'item_2': [0, 1, 0, 1],
             'item_3': [1, 0, 1, 0],
