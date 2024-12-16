@@ -172,17 +172,11 @@ class Amortized1PL(abstract_model.IrtModel):
             irt_batch_size = 256
             loc_diffs_all, scale_diffs_all = [], []
             for i in range(0, len(items), irt_batch_size):
-                if len(items[i:]) < irt_batch_size:
-                    batch_xs = items[i:]
-                    loc_diffs, scale_diffs = self.encoder.forward(batch_xs)
-                    loc_diffs_all.extend(loc_diffs)
-                    scale_diffs_all.extend(scale_diffs) 
-                else:
-                    # pick out the appropriate images from xs based on items idx
-                    batch_xs = items[i:i+irt_batch_size]
-                    loc_diffs, scale_diffs = self.encoder.forward(batch_xs)            
-                    loc_diffs_all.extend(loc_diffs)
-                    scale_diffs_all.extend(scale_diffs)
+                # pick out the appropriate images from xs based on items idx
+                batch_xs = items[i:i+irt_batch_size]
+                loc_diffs, scale_diffs = self.encoder.forward(batch_xs)            
+                loc_diffs_all.extend(loc_diffs)
+                scale_diffs_all.extend(scale_diffs)
             loc_diffs_all = torch.tensor(loc_diffs_all, **options).unsqueeze(1).float()
             scale_diffs_all = torch.tensor(scale_diffs_all, **options).unsqueeze(1).float()
             dist_b = dist.Normal(loc_diffs_all, scale_diffs_all)
