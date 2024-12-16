@@ -118,7 +118,7 @@ class FourParamLog(abstract_model.IrtModel):
             disc = pyro.sample("gamma", dist.Normal(mu_gamma, 1.0 / u_gamma))
 
         with pyro.plate("observe_data", obs.size(0)):
-            p_star = torch.sigmoid(disc[items] * (ability[subjects] - diff[items]))
+            p_star = torch.sigmoid(- disc[items] * (ability[subjects] - diff[items]))
             pyro.sample(
                 "obs",
                 dist.Bernoulli(probs=lambdas[items] * p_star),
