@@ -22,6 +22,7 @@
 
 from typing import Optional, Union, Dict
 from pathlib import Path
+import contextlib
 
 import typer
 import torch
@@ -189,9 +190,14 @@ class IrtModelTrainer:
         loss = float("inf")
         best_loss = loss
         current_lr = self._config.lr
-        with Live(table if self._verbose else None) as live:
-            live.console.quiet = not self._verbose
+        
+        if self._verbose:
+            live = Live(table)
             live.console.print(f"Training Pyro IRT Model for {epochs} epochs")
+        else:
+            live = contextlib.nullcontext()
+
+        with live:
             for epoch in range(epochs):
                 loss = svi.step(subjects, items, responses)
                 if loss < best_loss:
