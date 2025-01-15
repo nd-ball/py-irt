@@ -5,6 +5,17 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
 
+## [0.6.5]
+
+- Merged multiple PRs 
+    - https://github.com/nd-ball/py-irt/pull/84
+    - https://github.com/nd-ball/py-irt/pull/83
+    - https://github.com/nd-ball/py-irt/pull/81
+    - https://github.com/nd-ball/py-irt/pull/79
+    - https://github.com/nd-ball/py-irt/pull/78
+    - https://github.com/nd-ball/py-irt/pull/77
+    - https://github.com/nd-ball/py-irt/pull/75
+
 ## [0.6.4] - 2024-07-29
 
 - Merge GH-75 to bump torch version (GH-75)
