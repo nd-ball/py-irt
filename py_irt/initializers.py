@@ -94,3 +94,70 @@ class DifficultySignInitializer(IrtInitializer):
             diff.data[item_ix] = torch.tensor(
                 -self._magnitude, dtype=diff.data.dtype, device=diff.data.device
             )
+
+
+@register("anchor_items")
+class AnchorItemInitializer(IrtInitializer):
+    """Initializer for setting fixed values for anchor items.
+    
+    This initializer sets the parameter values for anchor items and ensures they
+    remain fixed during training by zeroing out their gradients and variance parameters.
+    """
+    
+    def __init__(self, dataset: Dataset):
+        super().__init__(dataset)
+        if dataset.anchor_items is None or len(dataset.anchor_items) == 0:
+            raise ValueError("Dataset must have anchor items defined")
+    
+    def initialize(self) -> None:
+        """Initialize anchor item parameters with their fixed values."""
+        if self._dataset.anchor_items is None:
+            return
+        
+        # Get parameter tensors from Pyro's param store
+        loc_diff = pyro.param("loc_diff")
+        scale_diff = pyro.param("scale_diff")
+        
+        # Check if discrimination parameters exist (2PL, 3PL, 4PL models)
+        has_disc = "loc_slope" in pyro.get_param_store().keys()
+        if has_disc:
+            loc_disc = pyro.param("loc_slope")
+            scale_disc = pyro.param("scale_slope")
+        
+        # Check if guessing parameters exist (3PL, 4PL models)
+        has_guess = "loc_guess" in pyro.get_param_store().keys()
+        if has_guess:
+            loc_guess = pyro.param("loc_guess")
+            scale_guess = pyro.param("scale_guess")
+        
+        console.log(f"Initializing {len(self._dataset.anchor_items)} anchor items:")
+        
+        # Create masks for anchor items
+        anchor_indices = self._dataset.get_anchor_indices()
+        
+        for anchor in self._dataset.anchor_items:
+            item_ix = anchor.item_ix
+            item_id = anchor.item_id
+            
+            # Set difficulty (all models have this)
+            if anchor.difficulty is not None:
+                # Detach and set the value
+                with torch.no_grad():
+                    loc_diff[item_ix] = anchor.difficulty
+                    # Set scale to very small value (near zero variance)
+                    scale_diff[item_ix] = 1e-8
+                console.log(f"  {item_id} (ix={item_ix}): difficulty={anchor.difficulty}")
+            
+            # Set discrimination if available
+            if has_disc and anchor.discrimination is not None:
+                with torch.no_grad():
+                    loc_disc[item_ix] = anchor.discrimination
+                    scale_disc[item_ix] = 1e-8
+                console.log(f"  {item_id} (ix={item_ix}): discrimination={anchor.discrimination}")
+            
+            # Set guessing if available
+            if has_guess and anchor.guessing is not None:
+                with torch.no_grad():
+                    loc_guess[item_ix] = anchor.guessing
+                    scale_guess[item_ix] = 1e-8
+                console.log(f"  {item_id} (ix={item_ix}): guessing={anchor.guessing}")
