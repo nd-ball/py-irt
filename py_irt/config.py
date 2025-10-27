@@ -24,6 +24,12 @@
 from typing import List, Dict, Union, Optional, Callable
 from pydantic import BaseModel, ConfigDict
 
+# Anchor items configuration constants
+# A small constant to represent near-zero variance for fixed parameters in variational inference.
+# This value is used to make anchor item parameter distributions extremely narrow (approaching
+# a Dirac delta function) while maintaining numerical stability in PyTorch/Pyro computations.
+NEAR_ZERO_SCALE = 1e-8
+
 # This registers all models with the registry
 # pylint: disable=unused-import
 from py_irt.models import *

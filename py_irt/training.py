@@ -45,7 +45,7 @@ from py_irt.models import abstract_model
 from py_irt.io import safe_file, write_json
 from py_irt.dataset import Dataset
 from py_irt.initializers import INITIALIZERS, IrtInitializer
-from py_irt.config import IrtConfig
+from py_irt.config import IrtConfig, NEAR_ZERO_SCALE
 from py_irt.models.abstract_model import IrtModel
 from py_irt.anchor_utils import create_anchor_gradient_zeroer
 
@@ -234,15 +234,15 @@ class IrtModelTrainer:
                         
                         if anchor.difficulty is not None:
                             set_param_value("loc_diff", anchor.difficulty, has_positive_constraint=False)
-                            set_param_value("scale_diff", 1e-8, has_positive_constraint=True)
+                            set_param_value("scale_diff", NEAR_ZERO_SCALE, has_positive_constraint=True)
                             
                         if anchor.discrimination is not None:
                             set_param_value("loc_slope", anchor.discrimination, has_positive_constraint=True)
-                            set_param_value("scale_slope", 1e-8, has_positive_constraint=True)
+                            set_param_value("scale_slope", NEAR_ZERO_SCALE, has_positive_constraint=True)
                             
                         if anchor.guessing is not None:
                             set_param_value("loc_guess", anchor.guessing, has_positive_constraint=True)
-                            set_param_value("scale_guess", 1e-8, has_positive_constraint=True)
+                            set_param_value("scale_guess", NEAR_ZERO_SCALE, has_positive_constraint=True)
                 
                 if loss < best_loss:
                     best_loss = loss

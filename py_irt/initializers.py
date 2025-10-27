@@ -34,6 +34,7 @@ import torch
 import pyro
 from rich.console import Console
 from py_irt.dataset import Dataset, ItemAccuracy
+from py_irt.config import NEAR_ZERO_SCALE
 
 
 console = Console()
@@ -145,19 +146,19 @@ class AnchorItemInitializer(IrtInitializer):
                 with torch.no_grad():
                     loc_diff[item_ix] = anchor.difficulty
                     # Set scale to very small value (near zero variance)
-                    scale_diff[item_ix] = 1e-8
+                    scale_diff[item_ix] = NEAR_ZERO_SCALE
                 console.log(f"  {item_id} (ix={item_ix}): difficulty={anchor.difficulty}")
             
             # Set discrimination if available
             if has_disc and anchor.discrimination is not None:
                 with torch.no_grad():
                     loc_disc[item_ix] = anchor.discrimination
-                    scale_disc[item_ix] = 1e-8
+                    scale_disc[item_ix] = NEAR_ZERO_SCALE
                 console.log(f"  {item_id} (ix={item_ix}): discrimination={anchor.discrimination}")
             
             # Set guessing if available
             if has_guess and anchor.guessing is not None:
                 with torch.no_grad():
                     loc_guess[item_ix] = anchor.guessing
-                    scale_guess[item_ix] = 1e-8
+                    scale_guess[item_ix] = NEAR_ZERO_SCALE
                 console.log(f"  {item_id} (ix={item_ix}): guessing={anchor.guessing}")
