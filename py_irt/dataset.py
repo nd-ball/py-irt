@@ -20,7 +20,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-from typing import Set, Dict, List, Union
+from typing import Set, Dict, List, Union, Optional
 from pathlib import Path
 from pydantic import BaseModel
 from py_irt.io import read_jsonlines
@@ -40,6 +40,18 @@ class ItemAccuracy(BaseModel):
         return self.correct / max(1, self.total)
 
 
+class AnchorItem(BaseModel):
+    """Represents an anchor item with fixed parameter values"""
+    item_id: str
+    item_ix: int
+    difficulty: Optional[float] = None
+    discrimination: Optional[float] = None
+    guessing: Optional[float] = None
+    
+    class Config:
+        arbitrary_types_allowed = True
+
+
 class Dataset(BaseModel):
     item_ids: Union[Set[str], OrderedSet]
     subject_ids: Union[Set[str], OrderedSet]
@@ -57,6 +69,9 @@ class Dataset(BaseModel):
 
     # should this example be included in training? 
     training_example: List[bool]
+    
+    # Anchor items with fixed parameters
+    anchor_items: Optional[List[AnchorItem]] = None
 
     class Config:
         arbitrary_types_allowed = True
@@ -73,6 +88,46 @@ class Dataset(BaseModel):
             item_accuracies[item_id].total += 1
 
         return item_accuracies
+    
+    def add_anchor_items(self, anchor_items: List[Dict[str, Union[str, float]]]) -> None:
+        """Add anchor items to the dataset.
+        
+        Args:
+            anchor_items: List of dictionaries with keys:
+                - 'item_id': str - The item ID
+                - 'difficulty': float (optional) - Fixed difficulty value
+                - 'discrimination': float (optional) - Fixed discrimination value
+                - 'guessing': float (optional) - Fixed guessing value
+        
+        Example:
+            dataset.add_anchor_items([
+                {'item_id': 'item_1', 'difficulty': 0.5, 'discrimination': 1.2},
+                {'item_id': 'item_2', 'difficulty': -0.3, 'discrimination': 0.8}
+            ])
+        """
+        self.anchor_items = []
+        for anchor_dict in anchor_items:
+            item_id = anchor_dict['item_id']
+            if item_id not in self.item_id_to_ix:
+                raise ValueError(f"Anchor item '{item_id}' not found in dataset")
+            
+            item_ix = self.item_id_to_ix[item_id]
+            anchor = AnchorItem(
+                item_id=item_id,
+                item_ix=item_ix,
+                difficulty=anchor_dict.get('difficulty'),
+                discrimination=anchor_dict.get('discrimination'),
+                guessing=anchor_dict.get('guessing')
+            )
+            self.anchor_items.append(anchor)
+        
+        console.log(f"Added {len(self.anchor_items)} anchor items")
+    
+    def get_anchor_indices(self) -> List[int]:
+        """Get the indices of anchor items"""
+        if self.anchor_items is None:
+            return []
+        return [anchor.item_ix for anchor in self.anchor_items]
 
     @classmethod
     def from_jsonlines(cls, data_path: Path, train_items: dict = None, amortized: bool = False):
