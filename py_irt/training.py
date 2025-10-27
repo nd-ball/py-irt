@@ -47,6 +47,7 @@ from py_irt.dataset import Dataset
 from py_irt.initializers import INITIALIZERS, IrtInitializer
 from py_irt.config import IrtConfig
 from py_irt.models.abstract_model import IrtModel
+from py_irt.anchor_utils import create_anchor_gradient_zeroer
 
 
 training_app = typer.Typer()
@@ -181,6 +182,12 @@ class IrtModelTrainer:
         _ = self._pyro_guide(subjects, items, responses)
         for init in self._initializers:
             init.initialize()
+        
+        # Set up anchor gradient zeroer if there are anchor items
+        anchor_zeroer = create_anchor_gradient_zeroer(self._dataset)
+        if anchor_zeroer.anchor_indices:
+            console.log("Registering gradient hooks for anchor items")
+            anchor_zeroer.register_hooks()
 
         table = Table()
         table.add_column("Epoch")
@@ -200,6 +207,43 @@ class IrtModelTrainer:
         with live:
             for epoch in range(epochs):
                 loss = svi.step(subjects, items, responses)
+                
+                # After SVI step, reset anchor item parameters to their fixed values
+                if anchor_zeroer.anchor_indices:
+                    param_store = pyro.get_param_store()
+                    for anchor in self._dataset.anchor_items:
+                        item_ix = anchor.item_ix
+                        
+                        # Helper function to set both constrained and unconstrained values
+                        def set_param_value(param_name, value, has_positive_constraint=False):
+                            if param_name in param_store:
+                                param = param_store[param_name]
+                                with torch.no_grad():
+                                    # Set constrained value
+                                    param[item_ix] = value
+                                    
+                                    # For constrained parameters with positive constraint, also update unconstrained
+                                    if has_positive_constraint and hasattr(param, 'unconstrained') and callable(param.unconstrained):
+                                        try:
+                                            unc = param.unconstrained()
+                                            # For positive constraint: unconstrained = log(constrained)
+                                            # This is the default Pyro transform for positive constraint
+                                            unc[item_ix] = torch.log(torch.tensor(value, device=unc.device))
+                                        except Exception:
+                                            pass  # If update fails, constrained value is still set
+                        
+                        if anchor.difficulty is not None:
+                            set_param_value("loc_diff", anchor.difficulty, has_positive_constraint=False)
+                            set_param_value("scale_diff", 1e-8, has_positive_constraint=True)
+                            
+                        if anchor.discrimination is not None:
+                            set_param_value("loc_slope", anchor.discrimination, has_positive_constraint=True)
+                            set_param_value("scale_slope", 1e-8, has_positive_constraint=True)
+                            
+                        if anchor.guessing is not None:
+                            set_param_value("loc_guess", anchor.guessing, has_positive_constraint=True)
+                            set_param_value("scale_guess", 1e-8, has_positive_constraint=True)
+                
                 if loss < best_loss:
                     best_loss = loss
                     self.best_params = self.export(items)
@@ -217,6 +261,10 @@ class IrtModelTrainer:
                 f"{epoch + 1}", "%.4f" % loss, "%.4f" % best_loss, "%.4f" % current_lr
             )
             self.last_params = self.export(items)
+        
+        # Clean up hooks after training
+        if anchor_zeroer.anchor_indices:
+            anchor_zeroer.remove_hooks()
 
     def export(self, items):
         if self.amortized:
