@@ -41,15 +41,29 @@ class ItemAccuracy(BaseModel):
 
 
 class AnchorItem(BaseModel):
-    """Represents an anchor item with fixed parameter values"""
+    """Represents an anchor item with fixed parameter values.
+    
+    Parameters can be either scalars or vectors (for multidimensional IRT).
+    When vectors are provided, they are used directly without scaling.
+    When scalars are provided for multidimensional models, they are scaled
+    by 1/sqrt(D) so that the L2 norm equals the original scalar.
+    """
     item_id: str
     item_ix: int
+    # Scalar values (for 1D models or as norm for multidim)
     difficulty: Optional[float] = None
     discrimination: Optional[float] = None
     guessing: Optional[float] = None
+    # Vector values (for multidimensional models - used directly)
+    difficulty_vector: Optional[List[float]] = None
+    discrimination_vector: Optional[List[float]] = None
     
     class Config:
         arbitrary_types_allowed = True
+    
+    def has_vector_params(self) -> bool:
+        """Check if this anchor has vector parameters."""
+        return self.difficulty_vector is not None or self.discrimination_vector is not None
 
 
 class Dataset(BaseModel):
@@ -89,20 +103,34 @@ class Dataset(BaseModel):
 
         return item_accuracies
     
-    def add_anchor_items(self, anchor_items: List[Dict[str, Union[str, float]]]) -> None:
+    def add_anchor_items(self, anchor_items: List[Dict[str, Union[str, float, List[float]]]]) -> None:
         """Add anchor items to the dataset.
         
         Args:
             anchor_items: List of dictionaries with keys:
                 - 'item_id': str - The item ID
-                - 'difficulty': float (optional) - Fixed difficulty value
-                - 'discrimination': float (optional) - Fixed discrimination value
+                - 'difficulty': float (optional) - Fixed difficulty value (scalar)
+                - 'discrimination': float (optional) - Fixed discrimination value (scalar)
                 - 'guessing': float (optional) - Fixed guessing value
+                - 'difficulty_vector': List[float] (optional) - Fixed difficulty vector (for MIRT)
+                - 'discrimination_vector': List[float] (optional) - Fixed discrimination vector (for MIRT)
+        
+        For multidimensional IRT models:
+            - If vectors are provided, they are used directly without any scaling.
+            - If only scalars are provided, they are scaled by 1/sqrt(D) so that
+              the L2 norm of the resulting uniform vector equals the original scalar.
         
         Example:
+            # Scalar anchors (will be scaled for multidim)
             dataset.add_anchor_items([
                 {'item_id': 'item_1', 'difficulty': 0.5, 'discrimination': 1.2},
-                {'item_id': 'item_2', 'difficulty': -0.3, 'discrimination': 0.8}
+            ])
+            
+            # Vector anchors (used directly for multidim)
+            dataset.add_anchor_items([
+                {'item_id': 'item_1', 
+                 'difficulty_vector': [0.3, 0.5, 0.2],
+                 'discrimination_vector': [0.8, 1.0, 0.6]},
             ])
         """
         self.anchor_items = []
@@ -112,12 +140,25 @@ class Dataset(BaseModel):
                 raise ValueError(f"Anchor item '{item_id}' not found in dataset")
             
             item_ix = self.item_id_to_ix[item_id]
+            
+            # Handle vector parameters
+            diff_vec = anchor_dict.get('difficulty_vector')
+            disc_vec = anchor_dict.get('discrimination_vector')
+            
+            # Convert numpy arrays to lists if needed
+            if diff_vec is not None and hasattr(diff_vec, 'tolist'):
+                diff_vec = diff_vec.tolist()
+            if disc_vec is not None and hasattr(disc_vec, 'tolist'):
+                disc_vec = disc_vec.tolist()
+            
             anchor = AnchorItem(
                 item_id=item_id,
                 item_ix=item_ix,
                 difficulty=anchor_dict.get('difficulty'),
                 discrimination=anchor_dict.get('discrimination'),
-                guessing=anchor_dict.get('guessing')
+                guessing=anchor_dict.get('guessing'),
+                difficulty_vector=diff_vec,
+                discrimination_vector=disc_vec,
             )
             self.anchor_items.append(anchor)
         

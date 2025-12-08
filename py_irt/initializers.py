@@ -120,10 +120,15 @@ class AnchorItemInitializer(IrtInitializer):
         scale_diff = pyro.param("scale_diff")
         
         # Check if discrimination parameters exist (2PL, 3PL, 4PL models)
-        has_disc = "loc_slope" in pyro.get_param_store().keys()
+        has_disc = "loc_slope" in pyro.get_param_store().keys() or "loc_disc" in pyro.get_param_store().keys()
         if has_disc:
-            loc_disc = pyro.param("loc_slope")
-            scale_disc = pyro.param("scale_slope")
+            # Try both names
+            if "loc_slope" in pyro.get_param_store().keys():
+                loc_disc = pyro.param("loc_slope")
+                scale_disc = pyro.param("scale_slope")
+            else:
+                loc_disc = pyro.param("loc_disc")
+                scale_disc = pyro.param("scale_disc")
         
         # Check if guessing parameters exist (3PL, 4PL models)
         has_guess = "loc_guess" in pyro.get_param_store().keys()
@@ -139,26 +144,25 @@ class AnchorItemInitializer(IrtInitializer):
         for anchor in self._dataset.anchor_items:
             item_ix = anchor.item_ix
             item_id = anchor.item_id
+            is_multidim = len(loc_diff.shape) > 1 and loc_diff.shape[1] > 1
             
-            # Set difficulty (all models have this)
-            if anchor.difficulty is not None:
-                # Detach and set the value
+            # Set difficulty (vector for multidim, scalar for 1D)
+            diff_value = anchor.difficulty_vector if is_multidim else anchor.difficulty
+            if diff_value is not None:
                 with torch.no_grad():
-                    loc_diff[item_ix] = anchor.difficulty
-                    # Set scale to very small value (near zero variance)
+                    if isinstance(diff_value, list):
+                        diff_value = torch.tensor(diff_value, dtype=loc_diff.dtype, device=loc_diff.device)
+                    loc_diff[item_ix] = diff_value
                     scale_diff[item_ix] = NEAR_ZERO_SCALE
-                console.log(f"  {item_id} (ix={item_ix}): difficulty={anchor.difficulty}")
+                console.log(f"  {item_id} (ix={item_ix}): difficulty_vector={anchor.difficulty_vector}")
             
-            # Set discrimination if available
-            if has_disc and anchor.discrimination is not None:
-                with torch.no_grad():
-                    loc_disc[item_ix] = anchor.discrimination
-                    scale_disc[item_ix] = NEAR_ZERO_SCALE
-                console.log(f"  {item_id} (ix={item_ix}): discrimination={anchor.discrimination}")
-            
-            # Set guessing if available
-            if has_guess and anchor.guessing is not None:
-                with torch.no_grad():
-                    loc_guess[item_ix] = anchor.guessing
-                    scale_guess[item_ix] = NEAR_ZERO_SCALE
-                console.log(f"  {item_id} (ix={item_ix}): guessing={anchor.guessing}")
+            # Set discrimination (vector for multidim, scalar for 1D)
+            if has_disc:
+                disc_value = anchor.discrimination_vector if is_multidim else anchor.discrimination
+                if disc_value is not None:
+                    with torch.no_grad():
+                        if isinstance(disc_value, list):
+                            disc_value = torch.tensor(disc_value, dtype=loc_disc.dtype, device=loc_disc.device)
+                        loc_disc[item_ix] = disc_value
+                        scale_disc[item_ix] = NEAR_ZERO_SCALE
+                    console.log(f"  {item_id} (ix={item_ix}): discrimination_vector={anchor.discrimination_vector}")

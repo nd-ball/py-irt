@@ -214,12 +214,22 @@ class IrtModelTrainer:
                     for anchor in self._dataset.anchor_items:
                         item_ix = anchor.item_ix
                         
+                        # Determine if this is a multidimensional model
+                        is_multidim = False
+                        D = 1
+                        if "loc_diff" in param_store:
+                            diff_param = param_store["loc_diff"]
+                            is_multidim = len(diff_param.shape) > 1 and diff_param.shape[1] > 1
+                            D = diff_param.shape[1] if is_multidim else 1
+                        
                         # Helper function to set both constrained and unconstrained values
                         def set_param_value(param_name, value, has_positive_constraint=False):
                             if param_name in param_store:
                                 param = param_store[param_name]
                                 with torch.no_grad():
                                     # Set constrained value
+                                    if isinstance(value, (list, tuple)):
+                                        value = torch.tensor(value, dtype=param.dtype, device=param.device)
                                     param[item_ix] = value
                                     
                                     # For constrained parameters with positive constraint, also update unconstrained
@@ -227,23 +237,28 @@ class IrtModelTrainer:
                                         try:
                                             unc = param.unconstrained()
                                             # For positive constraint: unconstrained = log(constrained)
-                                            # This is the default Pyro transform for positive constraint
-                                            unc[item_ix] = torch.log(torch.tensor(value, device=unc.device))
+                                            if isinstance(value, torch.Tensor):
+                                                unc[item_ix] = torch.log(value)
+                                            else:
+                                                unc[item_ix] = torch.log(torch.tensor(value, device=unc.device))
                                         except Exception:
                                             pass  # If update fails, constrained value is still set
                         
-                        if anchor.difficulty is not None:
-                            set_param_value("loc_diff", anchor.difficulty, has_positive_constraint=False)
+                        # Set difficulty (vector for multidim, scalar for 1D)
+                        diff_value = anchor.difficulty_vector if is_multidim else anchor.difficulty
+                        if diff_value is not None:
+                            set_param_value("loc_diff", diff_value, has_positive_constraint=False)
                             set_param_value("scale_diff", NEAR_ZERO_SCALE, has_positive_constraint=True)
-                            
-                        if anchor.discrimination is not None:
-                            set_param_value("loc_slope", anchor.discrimination, has_positive_constraint=True)
+                        
+                        # Set discrimination (vector for multidim, scalar for 1D)
+                        disc_value = anchor.discrimination_vector if is_multidim else anchor.discrimination
+                        if disc_value is not None:
+                            set_param_value("loc_slope", disc_value, has_positive_constraint=True)
                             set_param_value("scale_slope", NEAR_ZERO_SCALE, has_positive_constraint=True)
-                            
-                        if anchor.guessing is not None:
-                            set_param_value("loc_guess", anchor.guessing, has_positive_constraint=True)
-                            set_param_value("scale_guess", NEAR_ZERO_SCALE, has_positive_constraint=True)
-                
+                            if "loc_disc" in param_store:
+                                set_param_value("loc_disc", disc_value, has_positive_constraint=False)
+                            set_param_value("scale_disc", NEAR_ZERO_SCALE, has_positive_constraint=True)
+
                 if loss < best_loss:
                     best_loss = loss
                     self.best_params = self.export(items)

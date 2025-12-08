@@ -59,7 +59,8 @@ class AnchorGradientZeroer:
         if param_names is None:
             self.param_names = [
                 'loc_diff', 'scale_diff',
-                'loc_slope', 'scale_slope', 
+                'loc_slope', 'scale_slope',
+                'loc_disc', 'scale_disc', 
                 'loc_guess', 'scale_guess',
                 'loc_slip', 'scale_slip'
             ]
