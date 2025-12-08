@@ -154,7 +154,7 @@ class AnchorItemInitializer(IrtInitializer):
                         diff_value = torch.tensor(diff_value, dtype=loc_diff.dtype, device=loc_diff.device)
                     loc_diff[item_ix] = diff_value
                     scale_diff[item_ix] = NEAR_ZERO_SCALE
-                console.log(f"  {item_id} (ix={item_ix}): difficulty_vector={anchor.difficulty_vector}")
+                # console.log(f"  {item_id} (ix={item_ix}): difficulty_vector={anchor.difficulty_vector}")
             
             # Set discrimination (vector for multidim, scalar for 1D)
             if has_disc:
@@ -165,4 +165,4 @@ class AnchorItemInitializer(IrtInitializer):
                             disc_value = torch.tensor(disc_value, dtype=loc_disc.dtype, device=loc_disc.device)
                         loc_disc[item_ix] = disc_value
                         scale_disc[item_ix] = NEAR_ZERO_SCALE
-                    console.log(f"  {item_id} (ix={item_ix}): discrimination_vector={anchor.discrimination_vector}")
+                    # console.log(f"  {item_id} (ix={item_ix}): discrimination_vector={anchor.discrimination_vector}")
