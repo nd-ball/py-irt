@@ -45,8 +45,9 @@ from py_irt.models import abstract_model
 from py_irt.io import safe_file, write_json
 from py_irt.dataset import Dataset
 from py_irt.initializers import INITIALIZERS, IrtInitializer
-from py_irt.config import IrtConfig
+from py_irt.config import IrtConfig, NEAR_ZERO_SCALE
 from py_irt.models.abstract_model import IrtModel
+from py_irt.anchor_utils import create_anchor_gradient_zeroer
 
 
 training_app = typer.Typer()
@@ -181,6 +182,12 @@ class IrtModelTrainer:
         _ = self._pyro_guide(subjects, items, responses)
         for init in self._initializers:
             init.initialize()
+        
+        # Set up anchor gradient zeroer if there are anchor items
+        anchor_zeroer = create_anchor_gradient_zeroer(self._dataset)
+        if anchor_zeroer.anchor_indices:
+            console.log("Registering gradient hooks for anchor items")
+            anchor_zeroer.register_hooks()
 
         table = Table()
         table.add_column("Epoch")
@@ -200,6 +207,58 @@ class IrtModelTrainer:
         with live:
             for epoch in range(epochs):
                 loss = svi.step(subjects, items, responses)
+                
+                # After SVI step, reset anchor item parameters to their fixed values
+                if anchor_zeroer.anchor_indices:
+                    param_store = pyro.get_param_store()
+                    for anchor in self._dataset.anchor_items:
+                        item_ix = anchor.item_ix
+                        
+                        # Determine if this is a multidimensional model
+                        is_multidim = False
+                        D = 1
+                        if "loc_diff" in param_store:
+                            diff_param = param_store["loc_diff"]
+                            is_multidim = len(diff_param.shape) > 1 and diff_param.shape[1] > 1
+                            D = diff_param.shape[1] if is_multidim else 1
+                        
+                        # Helper function to set both constrained and unconstrained values
+                        def set_param_value(param_name, value, has_positive_constraint=False):
+                            if param_name in param_store:
+                                param = param_store[param_name]
+                                with torch.no_grad():
+                                    # Set constrained value
+                                    if isinstance(value, (list, tuple)):
+                                        value = torch.tensor(value, dtype=param.dtype, device=param.device)
+                                    param[item_ix] = value
+                                    
+                                    # For constrained parameters with positive constraint, also update unconstrained
+                                    if has_positive_constraint and hasattr(param, 'unconstrained') and callable(param.unconstrained):
+                                        try:
+                                            unc = param.unconstrained()
+                                            # For positive constraint: unconstrained = log(constrained)
+                                            if isinstance(value, torch.Tensor):
+                                                unc[item_ix] = torch.log(value)
+                                            else:
+                                                unc[item_ix] = torch.log(torch.tensor(value, device=unc.device))
+                                        except Exception:
+                                            pass  # If update fails, constrained value is still set
+                        
+                        # Set difficulty (vector for multidim, scalar for 1D)
+                        diff_value = anchor.difficulty_vector if is_multidim else anchor.difficulty
+                        if diff_value is not None:
+                            set_param_value("loc_diff", diff_value, has_positive_constraint=False)
+                            set_param_value("scale_diff", NEAR_ZERO_SCALE, has_positive_constraint=True)
+                        
+                        # Set discrimination (vector for multidim, scalar for 1D)
+                        disc_value = anchor.discrimination_vector if is_multidim else anchor.discrimination
+                        if disc_value is not None:
+                            set_param_value("loc_slope", disc_value, has_positive_constraint=True)
+                            set_param_value("scale_slope", NEAR_ZERO_SCALE, has_positive_constraint=True)
+                            if "loc_disc" in param_store:
+                                set_param_value("loc_disc", disc_value, has_positive_constraint=False)
+                            set_param_value("scale_disc", NEAR_ZERO_SCALE, has_positive_constraint=True)
+
                 if loss < best_loss:
                     best_loss = loss
                     self.best_params = self.export(items)
@@ -217,6 +276,10 @@ class IrtModelTrainer:
                 f"{epoch + 1}", "%.4f" % loss, "%.4f" % best_loss, "%.4f" % current_lr
             )
             self.last_params = self.export(items)
+        
+        # Clean up hooks after training
+        if anchor_zeroer.anchor_indices:
+            anchor_zeroer.remove_hooks()
 
     def export(self, items):
         if self.amortized:
