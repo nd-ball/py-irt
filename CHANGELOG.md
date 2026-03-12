@@ -8,9 +8,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 - **New feature**: Anchor items
   - https://github.com/nd-ball/py-irt/pull/91
-- Dependency bump (tornado)
+- Dependency bump (tornado, torch)
   - https://github.com/nd-ball/py-irt/pull/93
-
+  - https://github.com/nd-ball/py-irt/pull/94 
 
 ## [0.6.6]
 
