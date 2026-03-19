@@ -53,8 +53,7 @@ class Multidim2PL(IrtModel):
         return {
             "ability": pyro.param("loc_ability").data.tolist(),
             "diff": pyro.param("loc_diff").data.tolist(),
-            # loc_disc is the LogNormal location (log-space); exp() gives the median discrimination
-            "disc": pyro.param("loc_disc").data.exp().tolist(),
+            "disc": pyro.param("loc_disc").data.tolist(),
         }
 
     def get_model(self):
@@ -128,7 +127,7 @@ class Multidim2PL(IrtModel):
 
         with pyro.plate("gammas", self.num_items, dim=-2, device=self.device):
             with pyro.plate("gamma_dims", self.dims, dim=-1):
-                disc = pyro.sample("gamma", dist.Normal(mu_gamma, 1.0 / u_gamma))
+                disc = pyro.sample("gamma", dist.LogNormal(mu_gamma.clamp(-10, 10), (1.0 / u_gamma).clamp(max=3.0)))
 
         with pyro.plate("observe_data", obs.size(0)):
             multidim_logits = disc[items] * (ability[subjects] - diff[items])
@@ -210,7 +209,9 @@ class Multidim2PL(IrtModel):
         )
 
         m_gamma_param = pyro.param(
-            "loc_disc", torch.zeros([self.num_items, self.dims], device=self.device)
+            "loc_disc",
+            torch.ones([self.num_items, self.dims], device=self.device),
+            constraint=constraints.positive,
         )
         s_gamma_param = pyro.param(
             "scale_disc",
@@ -250,4 +251,4 @@ class Multidim2PL(IrtModel):
 
         with pyro.plate("gammas", self.num_items, dim=-2, device=self.device):
             with pyro.plate("gamma_dims", self.dims, dim=-1, device=self.device):
-                gamma = pyro.sample("gamma", dist.LogNormal(m_gamma_param, s_gamma_param))
+                gamma = pyro.sample("gamma", dist.LogNormal(m_gamma_param.log(), s_gamma_param))

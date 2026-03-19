@@ -157,16 +157,23 @@ class AnchorItemInitializer(IrtInitializer):
                 # console.log(f"  {item_id} (ix={item_ix}): difficulty_vector={anchor.difficulty_vector}")
             
             # Set discrimination (vector for multidim, scalar for 1D)
-            # Discrimination params are in log-space (LogNormal guide), so store log(value)
+            # Discrimination params have constraint=positive, so we must set
+            # unconstrained values (log-space) via the param store directly.
             if has_disc:
                 disc_value = anchor.discrimination_vector if is_multidim else anchor.discrimination
                 if disc_value is not None:
                     with torch.no_grad():
                         if isinstance(disc_value, list):
                             disc_value = torch.tensor(disc_value, dtype=loc_disc.dtype, device=loc_disc.device)
-                            disc_value = torch.log(disc_value)
                         else:
-                            disc_value = torch.log(torch.tensor(float(disc_value), dtype=loc_disc.dtype, device=loc_disc.device))
-                        loc_disc[item_ix] = disc_value
-                        scale_disc[item_ix] = NEAR_ZERO_SCALE
+                            disc_value = torch.tensor(float(disc_value), dtype=loc_disc.dtype, device=loc_disc.device)
+                        param_store = pyro.get_param_store()
+                        disc_name = "loc_slope" if "loc_slope" in param_store else "loc_disc"
+                        scale_name = "scale_slope" if "scale_slope" in param_store else "scale_disc"
+                        # Set unconstrained loc to log(target) so constrained = exp(log(target)) = target
+                        param_store._params[disc_name].data[item_ix] = disc_value.log()
+                        # Set unconstrained scale to log(NEAR_ZERO_SCALE) for a near-delta distribution
+                        param_store._params[scale_name].data[item_ix] = torch.tensor(
+                            NEAR_ZERO_SCALE, dtype=loc_disc.dtype, device=loc_disc.device
+                        ).log()
                     # console.log(f"  {item_id} (ix={item_ix}): discrimination_vector={anchor.discrimination_vector}")

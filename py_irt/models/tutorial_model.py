@@ -115,7 +115,7 @@ class FourParamLog(abstract_model.IrtModel):
             # We want to make disc non-negative, which we can implement by changing from:
             # disc ~ Normal
             # To:
-            disc = pyro.sample("gamma", dist.Normal(mu_gamma, 1.0 / u_gamma))
+            disc = pyro.sample("gamma", dist.LogNormal(mu_gamma.clamp(-10, 10), (1.0 / u_gamma).clamp(max=3.0)))
 
         with pyro.plate("observe_data", obs.size(0)):
             p_star = torch.sigmoid(disc[items] * (ability[subjects] - diff[items]))
@@ -195,7 +195,9 @@ class FourParamLog(abstract_model.IrtModel):
             constraint=constraints.positive,
         )
         m_gamma_param = pyro.param(
-            "loc_disc", torch.zeros(self.num_items, device=self.device)
+            "loc_disc",
+            torch.ones(self.num_items, device=self.device),
+            constraint=constraints.positive,
         )
         s_gamma_param = pyro.param(
             "scale_disc",
@@ -228,14 +230,13 @@ class FourParamLog(abstract_model.IrtModel):
             pyro.sample("b", dist.Normal(m_b_param, s_b_param))
 
         with pyro.plate("gammas", self.num_items, device=self.device):
-            pyro.sample("gamma", dist.LogNormal(m_gamma_param, s_gamma_param))
+            pyro.sample("gamma", dist.LogNormal(m_gamma_param.log(), s_gamma_param))
 
     def export(self):
         return {
             "ability": pyro.param("loc_ability").data.tolist(),
             "diff": pyro.param("loc_diff").data.tolist(),
-            # loc_disc is the LogNormal location (log-space); exp() gives the median discrimination
-            "disc": pyro.param("loc_disc").data.exp().tolist(),
+            "disc": pyro.param("loc_disc").data.tolist(),
         }
 
     def predict(self, subjects, items, params_from_file=None):
