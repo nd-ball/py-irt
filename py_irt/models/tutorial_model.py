@@ -115,11 +115,7 @@ class FourParamLog(abstract_model.IrtModel):
             # We want to make disc non-negative, which we can implement by changing from:
             # disc ~ Normal
             # To:
-            # log disc ~ Normal
-            # Re-arranging:
-            # disc ~ exp(Normal)
-            # Or just draw from LogNormal
-            disc = pyro.sample("gamma", dist.LogNormal(mu_gamma, 1.0 / u_gamma))
+            disc = pyro.sample("gamma", dist.Normal(mu_gamma, 1.0 / u_gamma))
 
         with pyro.plate("observe_data", obs.size(0)):
             p_star = torch.sigmoid(disc[items] * (ability[subjects] - diff[items]))

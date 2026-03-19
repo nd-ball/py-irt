@@ -115,7 +115,7 @@ class FourParamLog(abstract_model.IrtModel):
             diff = pyro.sample("b", dist.Normal(mu_b, 1.0 / u_b))
 
         with pyro.plate("gammas", self.num_items, device=self.device):
-            disc = pyro.sample("gamma", dist.LogNormal(mu_gamma, 1.0 / u_gamma))
+            disc = pyro.sample("gamma", dist.Normal(mu_gamma, 1.0 / u_gamma))
 
         with pyro.plate("observe_data", obs.size(0)):
             p_star = torch.sigmoid(disc[items] * (ability[subjects] - diff[items]))

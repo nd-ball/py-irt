@@ -173,7 +173,7 @@ class TwoParamLog(abstract_model.IrtModel):
             ability = pyro.sample("theta", dist.Normal(mu_theta, 1.0 / u_theta))
         with pyro.plate("bs", self.num_items, device=self.device):
             diff = pyro.sample("b", dist.Normal(mu_b, 1.0 / u_b))
-            slope = pyro.sample("a", dist.LogNormal(mu_a, 1.0 / u_a))
+            slope = pyro.sample("a", dist.Normal(mu_a, 1.0 / u_a))
         with pyro.plate("observe_data", obs.size(0)):
             pyro.sample(
                 "obs",
