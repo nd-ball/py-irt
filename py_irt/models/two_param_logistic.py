@@ -112,8 +112,7 @@ class TwoParamLog(abstract_model.IrtModel):
         )
         m_a_param = pyro.param(
             "loc_slope",
-            torch.ones(self.num_items, device=self.device),
-            constraint=constraints.positive,
+            torch.zeros(self.num_items, device=self.device),
         )
         s_a_param = pyro.param(
             "scale_slope",
@@ -267,7 +266,7 @@ class TwoParamLog(abstract_model.IrtModel):
         return {
             "ability": pyro.param("loc_ability").data.tolist(),
             "diff": pyro.param("loc_diff").data.tolist(),
-            # loc_slope is in log-space (LogNormal guide), exponentiate to get discrimination
+            # loc_slope is the LogNormal location (log-space); exp() gives the median discrimination
             "disc": pyro.param("loc_slope").data.exp().tolist(),
         }
 

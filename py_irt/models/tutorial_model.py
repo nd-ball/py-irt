@@ -238,7 +238,8 @@ class FourParamLog(abstract_model.IrtModel):
         return {
             "ability": pyro.param("loc_ability").data.tolist(),
             "diff": pyro.param("loc_diff").data.tolist(),
-            "disc": pyro.param("loc_disc").data.tolist(),
+            # loc_disc is the LogNormal location (log-space); exp() gives the median discrimination
+            "disc": pyro.param("loc_disc").data.exp().tolist(),
         }
 
     def predict(self, subjects, items, params_from_file=None):

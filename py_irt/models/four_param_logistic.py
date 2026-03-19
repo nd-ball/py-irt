@@ -115,7 +115,7 @@ class FourParamLog(abstract_model.IrtModel):
             diff = pyro.sample("b", dist.Normal(mu_b, 1.0 / u_b))
 
         with pyro.plate("gammas", self.num_items, device=self.device):
-            disc = pyro.sample("gamma", dist.Normal(mu_gamma, 1.0 / u_gamma))
+            disc = pyro.sample("gamma", dist.LogNormal(mu_gamma, 1.0 / u_gamma))
 
         with pyro.plate("observe_data", obs.size(0)):
             p_star = torch.sigmoid(disc[items] * (ability[subjects] - diff[items]))
@@ -212,13 +212,14 @@ class FourParamLog(abstract_model.IrtModel):
             pyro.sample("b", dist.Normal(m_b_param, s_b_param))
 
         with pyro.plate("gammas", self.num_items, device=self.device):
-            pyro.sample("gamma", dist.Normal(m_gamma_param, s_gamma_param))
+            pyro.sample("gamma", dist.LogNormal(m_gamma_param, s_gamma_param))
 
     def export(self):
         return {
             "ability": pyro.param("loc_ability").data.tolist(),
             "diff": pyro.param("loc_diff").data.tolist(),
-            "disc": pyro.param("loc_disc").data.tolist(),
+            # loc_disc is the LogNormal location (log-space); exp() gives the median discrimination
+            "disc": pyro.param("loc_disc").data.exp().tolist(),
             "lambdas": pyro.param("lambdas").data.tolist(),
         }
 
