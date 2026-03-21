@@ -115,7 +115,7 @@ class FourParamLog(abstract_model.IrtModel):
             diff = pyro.sample("b", dist.Normal(mu_b, 1.0 / u_b))
 
         with pyro.plate("gammas", self.num_items, device=self.device):
-            disc = pyro.sample("gamma", dist.LogNormal(mu_gamma.clamp(-10, 10), (1.0 / u_gamma).clamp(max=3.0)))
+            disc = pyro.sample("gamma", dist.LogNormal(mu_gamma.clamp(-5, 5), (1.0 / u_gamma).clamp(max=2.0)))
 
         with pyro.plate("observe_data", obs.size(0)):
             p_star = torch.sigmoid(disc[items] * (ability[subjects] - diff[items]))
@@ -190,8 +190,7 @@ class FourParamLog(abstract_model.IrtModel):
         )
         m_gamma_param = pyro.param(
             "loc_disc",
-            torch.ones(self.num_items, device=self.device),
-            constraint=constraints.positive,
+            torch.zeros(self.num_items, device=self.device),
         )
         s_gamma_param = pyro.param(
             "scale_disc",
@@ -216,13 +215,13 @@ class FourParamLog(abstract_model.IrtModel):
             pyro.sample("b", dist.Normal(m_b_param, s_b_param))
 
         with pyro.plate("gammas", self.num_items, device=self.device):
-            pyro.sample("gamma", dist.LogNormal(m_gamma_param.log(), s_gamma_param))
+            pyro.sample("gamma", dist.LogNormal(m_gamma_param, s_gamma_param))
 
     def export(self):
         return {
             "ability": pyro.param("loc_ability").data.tolist(),
             "diff": pyro.param("loc_diff").data.tolist(),
-            "disc": pyro.param("loc_disc").data.tolist(),
+            "disc": pyro.param("loc_disc").data.exp().tolist(),
             "lambdas": pyro.param("lambdas").data.tolist(),
         }
 
