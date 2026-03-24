@@ -81,7 +81,7 @@ class TwoParamLog(abstract_model.IrtModel):
             )
             slope = pyro.sample(
                 "a",
-                dist.Normal(
+                dist.LogNormal(
                     torch.tensor(0.0, device=self.device), torch.tensor(0.1, device=self.device)
                 ),
             )
@@ -112,8 +112,7 @@ class TwoParamLog(abstract_model.IrtModel):
         )
         m_a_param = pyro.param(
             "loc_slope",
-            torch.ones(self.num_items, device=self.device),
-            constraint=constraints.positive,
+            torch.zeros(self.num_items, device=self.device),
         )
         s_a_param = pyro.param(
             "scale_slope",
@@ -129,7 +128,7 @@ class TwoParamLog(abstract_model.IrtModel):
             dist_b = dist.Normal(m_b_param, s_b_param)
             pyro.sample("b", dist_b)
 
-            dist_a = dist.Normal(m_a_param, s_a_param)
+            dist_a = dist.LogNormal(m_a_param, s_a_param)
             pyro.sample("a", dist_a)
 
     def model_hierarchical(self, subjects, items, obs):
@@ -174,7 +173,7 @@ class TwoParamLog(abstract_model.IrtModel):
             ability = pyro.sample("theta", dist.Normal(mu_theta, 1.0 / u_theta))
         with pyro.plate("bs", self.num_items, device=self.device):
             diff = pyro.sample("b", dist.Normal(mu_b, 1.0 / u_b))
-            slope = pyro.sample("a", dist.Normal(mu_a, 1.0 / u_a))
+            slope = pyro.sample("a", dist.LogNormal(mu_a.clamp(-5, 5), (1.0 / u_a).clamp(max=2.0)))
         with pyro.plate("observe_data", obs.size(0)):
             pyro.sample(
                 "obs",
@@ -230,7 +229,10 @@ class TwoParamLog(abstract_model.IrtModel):
             torch.ones(self.num_items, device=self.device),
             constraint=constraints.positive,
         )
-        m_a_param = pyro.param("loc_slope", torch.zeros(self.num_items, device=self.device))
+        m_a_param = pyro.param(
+            "loc_slope",
+            torch.zeros(self.num_items, device=self.device),
+        )
         s_a_param = pyro.param(
             "scale_slope",
             torch.ones(self.num_items, device=self.device),
@@ -249,7 +251,7 @@ class TwoParamLog(abstract_model.IrtModel):
             pyro.sample("theta", dist.Normal(m_theta_param, s_theta_param))
         with pyro.plate("bs", self.num_items, device=self.device):
             pyro.sample("b", dist.Normal(m_b_param, s_b_param))
-            pyro.sample("a", dist.Normal(m_a_param, s_a_param))
+            pyro.sample("a", dist.LogNormal(m_a_param, s_a_param))
 
     def get_model(self):
         if self.priors == "vague":
@@ -267,7 +269,7 @@ class TwoParamLog(abstract_model.IrtModel):
         return {
             "ability": pyro.param("loc_ability").data.tolist(),
             "diff": pyro.param("loc_diff").data.tolist(),
-            "disc": pyro.param("loc_slope").data.tolist(),
+            "disc": pyro.param("loc_slope").data.exp().tolist(),
         }
 
     def fit_MCMC(self, models, items, responses, num_epochs):

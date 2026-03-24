@@ -157,12 +157,15 @@ class AnchorItemInitializer(IrtInitializer):
                 # console.log(f"  {item_id} (ix={item_ix}): difficulty_vector={anchor.difficulty_vector}")
             
             # Set discrimination (vector for multidim, scalar for 1D)
+            # loc_slope/loc_disc is in log-space (LogNormal), so store log(value)
             if has_disc:
                 disc_value = anchor.discrimination_vector if is_multidim else anchor.discrimination
                 if disc_value is not None:
                     with torch.no_grad():
                         if isinstance(disc_value, list):
                             disc_value = torch.tensor(disc_value, dtype=loc_disc.dtype, device=loc_disc.device)
-                        loc_disc[item_ix] = disc_value
+                        else:
+                            disc_value = torch.tensor(float(disc_value), dtype=loc_disc.dtype, device=loc_disc.device)
+                        loc_disc[item_ix] = disc_value.log()
                         scale_disc[item_ix] = NEAR_ZERO_SCALE
                     # console.log(f"  {item_id} (ix={item_ix}): discrimination_vector={anchor.discrimination_vector}")

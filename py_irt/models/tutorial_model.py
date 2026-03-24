@@ -115,11 +115,7 @@ class FourParamLog(abstract_model.IrtModel):
             # We want to make disc non-negative, which we can implement by changing from:
             # disc ~ Normal
             # To:
-            # log disc ~ Normal
-            # Re-arranging:
-            # disc ~ exp(Normal)
-            # Or just draw from LogNormal
-            disc = pyro.sample("gamma", dist.LogNormal(mu_gamma, 1.0 / u_gamma))
+            disc = pyro.sample("gamma", dist.LogNormal(mu_gamma.clamp(-5, 5), (1.0 / u_gamma).clamp(max=2.0)))
 
         with pyro.plate("observe_data", obs.size(0)):
             p_star = torch.sigmoid(disc[items] * (ability[subjects] - diff[items]))
@@ -199,7 +195,8 @@ class FourParamLog(abstract_model.IrtModel):
             constraint=constraints.positive,
         )
         m_gamma_param = pyro.param(
-            "loc_disc", torch.zeros(self.num_items, device=self.device)
+            "loc_disc",
+            torch.zeros(self.num_items, device=self.device),
         )
         s_gamma_param = pyro.param(
             "scale_disc",
@@ -238,7 +235,7 @@ class FourParamLog(abstract_model.IrtModel):
         return {
             "ability": pyro.param("loc_ability").data.tolist(),
             "diff": pyro.param("loc_diff").data.tolist(),
-            "disc": pyro.param("loc_disc").data.tolist(),
+            "disc": pyro.param("loc_disc").data.exp().tolist(),
         }
 
     def predict(self, subjects, items, params_from_file=None):
