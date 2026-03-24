@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.com/nd-ball/py-irt.svg?branch=master)](https://travis-ci.com/nd-ball/py-irt)
+[![Build Status](https://app.travis-ci.com/nd-ball/py-irt.svg?token=4dkS1TyvFrox7gq3GBzD&branch=master)](https://app.travis-ci.com/nd-ball/py-irt)
 [![codecov.io](https://codecov.io/gh/nd-ball/py-irt/coverage.svg?branch=master)](https://codecov.io/gh/nd-ball/py-irt)
 
 # py-irt
