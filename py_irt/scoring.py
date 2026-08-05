@@ -31,35 +31,66 @@ from scipy.stats import lognorm, norm
 from scipy.special import expit
 
 
-def theta_fn(difficulties, response_pattern):
-    """Estimate theta for a given response pattern"""
+def theta_fn(difficulties, response_pattern, discriminations=None, guessing=None):
+    """
+    Build the negative log-likelihood function of theta for a response pattern.
+
+    Supports the 1PL, 2PL, and 3PL models:
+        p(correct) = c + (1 - c) * sigmoid(a * (theta - b))
+    where b = difficulty, a = discrimination (1PL: a = 1),
+    and c = guessing / lower asymptote (1PL, 2PL: c = 0).
+
+    difficulties: item difficulties (b)
+    response_pattern: dichotomous responses (0/1), one per item
+    discriminations: item discriminations (a); if None, all 1 (1PL)
+    guessing: item guessing parameters (c); if None, all 0 (1PL/2PL)
+    """
+    difficulties = np.asarray(difficulties, dtype=float)
+    responses = np.asarray(response_pattern, dtype=float)
+    if discriminations is None:
+        discriminations = np.ones_like(difficulties)
+    else:
+        discriminations = np.asarray(discriminations, dtype=float)
+    if guessing is None:
+        guessing = np.zeros_like(difficulties)
+    else:
+        guessing = np.asarray(guessing, dtype=float)
 
     def fn(theta):
         theta = theta[0]
-        probabilities = expit(theta - difficulties)
-        log_likelihood = 0
-        for i, rp in enumerate(response_pattern):
-            if rp == 0:
-                log_likelihood += np.log(1-probabilities[i])
-            else:
-                log_likelihood += np.log(probabilities[i])
+        p_star = expit(discriminations * (theta - difficulties))
+        probabilities = guessing + (1 - guessing) * p_star
+        # clip to avoid log(0) at extreme theta values
+        probabilities = np.clip(probabilities, 1e-10, 1 - 1e-10)
+        log_likelihood = np.sum(
+            responses * np.log(probabilities) + (1 - responses) * np.log(1 - probabilities)
+        )
         return -log_likelihood
 
     return fn
 
 
-def calculate_theta(difficulties, response_pattern, num_obs=-1):
+def calculate_theta(
+    difficulties, response_pattern, num_obs=-1, discriminations=None, guessing=None
+):
     """
-    Given learned item difficulties and a model response pattern, estimate theta
-    if num_obs > 0, then sample from the observed values for a computational speedup
+    Given learned item parameters and a model response pattern, estimate theta.
+    If num_obs > 0, then sample from the observed values for a computational speedup.
+
+    Pass only difficulties for a 1PL model, add discriminations for 2PL,
+    and add guessing parameters for 3PL.
     """
 
     if num_obs > 0:
         samples = np.random.choice(len(difficulties), num_obs)
         difficulties = [difficulties[s] for s in samples]
         response_pattern = [response_pattern[s] for s in samples]
+        if discriminations is not None:
+            discriminations = [discriminations[s] for s in samples]
+        if guessing is not None:
+            guessing = [guessing[s] for s in samples]
 
-    fn = theta_fn(difficulties, response_pattern)
+    fn = theta_fn(difficulties, response_pattern, discriminations, guessing)
     result = minimize(fn, [0.1], method="BFGS")
     return result["x"]
 
