@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.7.2]
+
+- **New feature**: 2PL and 3PL theta scoring
+  - https://github.com/nd-ball/py-irt/pull/100
+- Dependency bump (tornado, pygments)
+  - https://github.com/nd-ball/py-irt/pull/96
+  - https://github.com/nd-ball/py-irt/pull/98
+  - https://github.com/nd-ball/py-irt/pull/102
+
 ## [0.7.1]
 
 - **Update**: Positivity constraint for descrimination parameter
