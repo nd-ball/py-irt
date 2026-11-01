@@ -145,9 +145,11 @@ class IrtModelTrainer:
 
         if self._config.dims is not None:
             args["dims"] = self._config.dims
-        args["dropout"] = self._config.dropout
-        args["hidden"] = self._config.hidden
-        args["vocab_size"] = self._config.vocab_size
+        # Encoder/decoder settings only apply to amortized models
+        if self.amortized:
+            args["dropout"] = self._config.dropout
+            args["hidden"] = self._config.hidden
+            args["vocab_size"] = self._config.vocab_size
 
         console.log(f"Parsed Model Args: {args}")
         if isinstance(model_type, str):
