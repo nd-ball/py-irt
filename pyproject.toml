@@ -24,7 +24,7 @@ torch = "^2.2.0"
 pytest = "^7.4.4"
 pytest-cov = "^4.1.0"
 pylint = "^3.0.3"
-black = "^24.3.0"
+black = "^26.10.1"
 isort = "^5.13.2"
 ipython = "^8.13.0"
 
