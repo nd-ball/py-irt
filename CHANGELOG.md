@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 - **Fix**: `multidim_2pl` now implements `predict`, so `train-and-evaluate` and `evaluate` work for it
   - https://github.com/nd-ball/py-irt/issues/41
+  - https://github.com/nd-ball/py-irt/pull/111
 - `predict` is now an abstract method on `IrtModel`
 - Tests for `predict` on the 1PL, 2PL, 3PL, 4PL, multidim 2PL, and tutorial models
 
