@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.8.0]
+
+- **Breaking**: Supported Python versions are now 3.10-3.14 (dropped 3.9, added 3.12-3.14)
+  - https://github.com/nd-ball/py-irt/pull/103
+- **Update**: Refreshed dependency lock (numpy 2.x, scipy, pandas, scikit-learn, torch 2.14+)
+  - https://github.com/nd-ball/py-irt/pull/103
+- **Fix**: `py-irt --help` crash with click >= 8.2; now requires typer >= 0.16
+  - https://github.com/nd-ball/py-irt/pull/104
+- CI: fixed for Ubuntu 26.04 runners, test matrix 3.10-3.14, Codecov token uploads
+  - https://github.com/nd-ball/py-irt/pull/103
+
 ## [0.7.2]
 
 - **New feature**: 2PL and 3PL theta scoring
