@@ -77,6 +77,14 @@ class IrtModel(abc.ABC):
     def export(self) -> Dict[str, Any]:
         pass
 
+    @abc.abstractmethod
+    def predict(self, subjects, items, params_from_file=None):
+        """Return p(correct) for each (subject, item) index pair.
+
+        Uses the model's current parameters, or ``params_from_file`` (a dict in
+        the format written by ``export``) when given.
+        """
+
     @classmethod
     def train(cls, dataset, **kw):
         # import here to avoid circular import
