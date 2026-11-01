@@ -23,12 +23,15 @@
 
 import unittest
 
+import pyro
+
 from py_irt.config import IrtConfig
 from py_irt.training import IrtModelTrainer
 
 
 class TestMultidim2PL(unittest.TestCase):
     def test_training(self):
+        pyro.set_rng_seed(0)
         config = IrtConfig(model_type="multidim_2pl", epochs=100, dims=3)
         trainer = IrtModelTrainer(config=config, data_path="test_fixtures/minitest.jsonlines")
         trainer.train(device="cpu")

@@ -43,6 +43,7 @@ class IrtConfig(BaseModel):
     dims: Optional[int] = None
     lr: float = 0.1
     lr_decay: float = 0.9999
+    clip_norm: float = 10.0
     dropout: float = 0.5
     hidden: int = 100
     vocab_size: Optional[int] = None
