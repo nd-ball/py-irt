@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.8.1]
+
+- **Fix**: NaN divergence during training of hierarchical models (3PL, 4PL, multidim 2PL); optimizer is now `ClippedAdam` with gradient clipping
+  - **Behavior change**: 3PL, 4PL, and multidim 2PL estimates differ from 0.8.0 for the same data and seed (lower final loss, less variation across seeds)
+  - New config option `clip_norm` (default 10.0)
+  - https://github.com/nd-ball/py-irt/pull/108
+- Dev dependency bump (pytest 9, black 26, pytest-cov 7)
+  - https://github.com/nd-ball/py-irt/pull/105
+
 ## [0.8.0]
 
 - **Breaking**: Supported Python versions are now 3.10-3.14 (dropped 3.9, added 3.12-3.14)
