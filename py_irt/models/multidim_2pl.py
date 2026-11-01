@@ -21,6 +21,7 @@
 # SOFTWARE.
 
 
+import numpy as np
 import pyro
 import pyro.distributions as dist
 import torch
@@ -55,6 +56,19 @@ class Multidim2PL(IrtModel):
             "diff": pyro.param("loc_diff").data.tolist(),
             "disc": pyro.param("loc_disc").data.exp().tolist(),
         }
+
+    def predict(self, subjects, items, params_from_file=None):
+        """predict p(correct | params) for a specified list of model, item pairs"""
+        if params_from_file is not None:
+            model_params = params_from_file
+        else:
+            model_params = self.export()
+        # each row is a [dims] vector; per-dimension logits are summed as in the model
+        abilities = np.array([model_params["ability"][i] for i in subjects])
+        diffs = np.array([model_params["diff"][i] for i in items])
+        discs = np.array([model_params["disc"][i] for i in items])
+        logits = (discs * (abilities - diffs)).sum(axis=-1)
+        return 1 / (1 + np.exp(-logits))
 
     def get_model(self):
         return self.model_hierarchical
