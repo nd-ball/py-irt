@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.8.2]
+
+- **Fix**: `dropout`, `hidden`, and `vocab_size` are now passed only to amortized models; removed the unused parameters from the 1PL constructor
+  - CLI help for `--dropout` and `--hidden` notes they only apply to amortized models
+  - https://github.com/nd-ball/py-irt/issues/92
+  - https://github.com/nd-ball/py-irt/pull/110
+- Dev dependency bump (pylint 4)
+  - https://github.com/nd-ball/py-irt/pull/109
+
 ## [0.8.1]
 
 - **Fix**: NaN divergence during training of hierarchical models (3PL, 4PL, multidim 2PL); optimizer is now `ClippedAdam` with gradient clipping
