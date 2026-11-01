@@ -59,8 +59,8 @@ def train(
     device: str = "cpu",
     initializers: Optional[List[str]] = None,
     config_path: Optional[str] = None,
-    dropout: Optional[float] = 0.5,
-    hidden: Optional[int] = 100,
+    dropout: Optional[float] = typer.Option(0.5, help="Dropout rate (amortized models only)"),
+    hidden: Optional[int] = typer.Option(100, help="Hidden layer size (amortized models only)"),
     seed: Optional[int] = None,
     deterministic: bool = False,
     log_every: int = 100,
@@ -138,8 +138,8 @@ def train_and_evaluate(
     seed: int = 42,
     train_size: float = 0.9,
     config_path: Optional[str] = None,
-    dropout: Optional[float] = 0.5,
-    hidden: Optional[int] = 100
+    dropout: Optional[float] = typer.Option(0.5, help="Dropout rate (amortized models only)"),
+    hidden: Optional[int] = typer.Option(100, help="Hidden layer size (amortized models only)")
 ):
     if config_path is None:
         parsed_config = {}

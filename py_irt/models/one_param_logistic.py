@@ -55,9 +55,6 @@ class OneParamLog(abstract_model.IrtModel):
             num_subjects: int,
             verbose: bool = False,
             device: str = "cpu",
-            vocab_size: int = None,
-            dropout: float = None,
-            hidden: int = None,
             **kwargs
     ):
         super().__init__(
